@@ -4,6 +4,7 @@ async fn main() {
     use axum::Router;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
+    use chatclm::fileserv::file_and_error_handler;
     use chatclm::app::*;
 
     // Setting get_configuration(None) means we'll be using cargo-leptos's env values
@@ -19,6 +20,7 @@ async fn main() {
     // build our application with a route
     let app = Router::new()
         .leptos_routes(&leptos_options, routes, App)
+        .fallback(file_and_error_handler)
         .with_state(leptos_options);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();

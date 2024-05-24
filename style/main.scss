@@ -1,4 +1,142 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Helvetica, sans-serif;
+  font-size: 16px;
+}
+
+:root {
+  --navbar-height: 6rem;
+  --max-content-width: 70rem;
+  --content-side-padding: 5rem;
+}
+
+html {
+  font-size: 10px;
+}
+
 body {
-	font-family: sans-serif;
-	text-align: center;
+  min-height: 100vh;
+  background-color: dimgrey;
+}
+
+.navbar {
+  width: 100%;
+  background-color: blue;
+  height: var(--navbar-height);
+  position: fixed;
+  top: 0;
+  display: block;
+  padding: 1rem var(--content-side-padding);
+}
+
+.prompt {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: black;
+  display: grid;
+  justify-items: center;
+  padding: 0.5rem var(--content-side-padding) 3rem var(--content-side-padding);
+
+  &__wrapper {
+    width: 100%;
+    max-width: var(--max-content-width);
+  }
+}
+
+.prompt_input {
+  padding: 0 0.5rem 0 3rem;
+  background-color: white;
+  border-radius: 3rem;
+
+  &__textarea_wrapper {
+    padding: 0.5rem;
+    display: grid;
+    grid-template-columns: 1fr 4rem;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: none;
+    resize: none;
+    padding: 1rem 0;
+    line-height: 25px;
+    display: block;
+  }
+
+  &__send_button {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background-color: red;
+    color: white;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    user-select: none;
+  }
+}
+
+.chat {
+  width: 100%;
+  background-color: green;
+  margin-top: var(--navbar-height);
+  padding: 2rem var(--content-side-padding);
+  display: grid;
+  justify-items: center;
+  gap: 2rem;
+}
+
+.chat_message {
+  width: 100%;
+  max-width: var(--max-content-width);
+  display: grid;
+
+  p {
+    line-height: 1.5rem;
+  }
+
+  &__bubble {
+    padding: 1rem 2rem;
+    max-width: 70%;
+    justify-self: end;
+    border-radius: 2.5rem;
+    background-color: lime;
+  }
+
+  &__icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    border: 0.2rem solid blue;
+    padding: 0.5rem;
+
+    & > div {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background-color: aqua;
+    }
+  }
+}
+
+.chat_message--machine {
+  grid-template-columns: 3.5rem 1fr;
+  gap: 2rem;
+
+  & > p {
+    padding-top: 1rem;
+  }
+}
+
+.dropdown {
+  background-color: red;
+  width: 100px;
+  height: 100%;
 }
