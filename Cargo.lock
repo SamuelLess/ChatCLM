@@ -343,6 +343,7 @@ dependencies = [
  "tracing",
  "wasm-bindgen",
  "zstd",
+ "zstd-sys",
 ]
 
 [[package]]
