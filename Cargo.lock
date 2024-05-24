@@ -254,6 +254,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "chatclm"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "console_error_panic_hook",
+ "http 1.1.0",
+ "leptos",
+ "leptos_axum",
+ "leptos_meta",
+ "leptos_router",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "ciborium"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -285,25 +304,6 @@ name = "collection_literals"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "186dce98367766de751c42c4f03970fc60fc012296e706ccbb9d5df9b6c1e271"
-
-[[package]]
-name = "compchat"
-version = "0.1.0"
-dependencies = [
- "axum",
- "console_error_panic_hook",
- "http 1.1.0",
- "leptos",
- "leptos_axum",
- "leptos_meta",
- "leptos_router",
- "thiserror",
- "tokio",
- "tower",
- "tower-http",
- "tracing",
- "wasm-bindgen",
-]
 
 [[package]]
 name = "config"
