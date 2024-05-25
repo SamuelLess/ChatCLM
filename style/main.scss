@@ -159,12 +159,15 @@ main {
     border-radius: 50%;
     border: 0.2rem solid var(--color-container);
     padding: 0.5rem;
+    display: grid;
+    justify-items: center;
 
     & > div {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      //background-color: var(--color-container-border);
+      font-size: 4.5rem;
+      margin-top: -.5rem;
+      margin-left: 0.15rem;
+      text-align: center;
+      color: var(--color-text-secondary);
     }
   }
 }
