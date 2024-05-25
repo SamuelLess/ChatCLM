@@ -1,3 +1,5 @@
+#![feature(lazy_cell)]
+
 pub mod app;
 pub mod chat;
 pub mod component;

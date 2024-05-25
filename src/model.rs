@@ -1,4 +1,7 @@
+use std::sync::{Arc, LazyLock, Once};
 use leptos::{server, ServerFnError};
+use tokio::sync::OnceCell;
+use crate::backend::CLM;
 
 #[derive(Copy, Clone)]
 pub enum Model {
@@ -47,9 +50,15 @@ pub async fn random_next_token(prompt: String) -> Option<String> {
         Some(format!("{} next", prompt))
     }
 }
-
-pub async fn chat_clm_next_token(prompt: String) -> Option<String> {
-    todo!()
+static CLM: LazyLock<CLM> = LazyLock::new(CLM::new);
+pub async fn chat_clm_next_token(prompt: String ) -> Option<String> {
+    
+    if prompt.len() > 80 {
+        return None;
+    }
+    
+        Some(CLM.predict_next(prompt))
+    
 }
 
 pub async fn gpt4o_next_token(prompt: String) -> Option<String> {
