@@ -7,6 +7,7 @@ pub mod error_template;
 #[cfg(feature = "ssr")]
 pub mod fileserv;
 pub mod model;
+#[cfg(feature = "ssr")]
 pub mod backend;
 
 

@@ -1,6 +1,8 @@
 use std::sync::{Arc, LazyLock, Once};
 use leptos::{server, ServerFnError};
+#[cfg(feature = "ssr")]
 use tokio::sync::OnceCell;
+#[cfg(feature = "ssr")]
 use crate::backend::CLM;
 
 #[derive(Copy, Clone)]
@@ -31,6 +33,8 @@ impl Model {
         }
     }
 
+
+    #[cfg(feature = "ssr")]
     pub async fn predict_next_token(model_idx: usize, prompt: String) -> Option<String> {
         match Self::from_index(model_idx) {
             Model::ChatCLM1_0 => chat_clm_next_token(prompt).await,
@@ -50,15 +54,18 @@ pub async fn random_next_token(prompt: String) -> Option<String> {
         Some(format!("{} next", prompt))
     }
 }
+#[cfg(feature = "ssr")]
 static CLM: LazyLock<CLM> = LazyLock::new(CLM::new);
+
+#[cfg(feature = "ssr")]
 pub async fn chat_clm_next_token(prompt: String ) -> Option<String> {
-    
+
     if prompt.len() > 80 {
         return None;
     }
-    
-        Some(CLM.predict_next(prompt))
-    
+
+        Some(CLM.predict_next(prompt, 1, 10))
+
 }
 
 pub async fn gpt4o_next_token(prompt: String) -> Option<String> {
