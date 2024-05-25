@@ -3,7 +3,7 @@
 [chatCLM.xyz](https://chatclm.xyz)
 
 The CLM describes itself as follows:
-> A compression based LLM. A compression based LLM. A compression based LLM. A compression based LLM. A compression based LLM.
+> You are chatCLM. A zstd compression based LM. You are chatCLM. A zstd compression based LM. You are chatCLM. A zstd compression based LM.
 
 
 ## Overview
