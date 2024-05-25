@@ -12,11 +12,12 @@
   --max-content-width: 75rem;
   --content-side-padding: 5rem;
 
-  --color-background: #0b0d0e;
-  --color-container: #151719;
-  --color-container-border: #313235;
-  --color-text: #f3f7f6;
-  --color-accent: #55d799;
+  --color-background: #212121;
+  --color-container: #2f2f2f;
+  --color-container-border: #e3e3e3;
+  --color-text: #ececec;
+  --color-text-secondary: #b4b4b4;
+  --color-button: #676767;
 }
 
 html {
@@ -50,13 +51,20 @@ body {
     width: 100%;
     max-width: var(--max-content-width);
   }
+
+  &__disclaimer {
+    display: block;
+    text-align: center;
+    padding-top: 1rem;
+    color: var(--color-text-secondary);
+    font-size: 1.2rem;
+  }
 }
 
 .prompt_input {
   padding: 0 0.5rem 0 3rem;
   border-radius: 3rem;
   background-color: var(--color-container);
-  border: 0.1rem solid var(--color-container-border);
 
   &__textarea_wrapper {
     padding: 0.5rem;
@@ -76,18 +84,24 @@ body {
     line-height: 25px;
     display: block;
     color: var(--color-text);
+
+    &::placeholder {
+      color: var(--color-text-secondary);
+    }
   }
 
   &__send_button {
     width: 4rem;
     height: 4rem;
     border-radius: 50%;
-    background-color: var(--color-container-border);
-    color: var(--color-accent);
+    background-color: var(--color-button);
+    color: var(--color-container);
     display: grid;
-    place-items: center;
+    justify-items: center;
+    padding-top: 0.9rem;
     cursor: pointer;
     user-select: none;
+    font-weight: bold;
   }
 }
 
@@ -122,7 +136,7 @@ body {
     width: 3.5rem;
     height: 3.5rem;
     border-radius: 50%;
-    border: 0.1rem solid var(--color-container-border);
+    border: 0.2rem solid var(--color-container);
     padding: 0.5rem;
 
     & > div {

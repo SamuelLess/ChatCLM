@@ -7,6 +7,8 @@ pub fn PromptSection() -> impl IntoView {
         <section class="prompt">
             <div class="prompt__wrapper">
                 <PromptInput/>
+
+                <p class="prompt__disclaimer">ChatCLM can make mistakes. Check important info.</p>
             </div>
         </section>
     }
