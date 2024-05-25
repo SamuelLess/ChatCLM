@@ -16,7 +16,7 @@ pub enum Model {
 impl Model {
     pub fn name(&self) -> &'static str {
         match self {
-            Model::ChatCLM1_0 => "ChatCLM 1.0",
+            Model::ChatCLM1_0 => "ChatCLM 0.1-pre-alpha",
             Model::ChatGPT3_5 => "ChatGPT 3.5",
             Model::ChatGPT4o => "ChatGPT 4o",
             Model::ChatRandom => "ChatRandom",
@@ -60,11 +60,11 @@ static CLM: LazyLock<CLM> = LazyLock::new(CLM::new);
 #[cfg(feature = "ssr")]
 pub async fn chat_clm_next_token(prompt: String ) -> Option<String> {
 
-    if prompt.len() > 80 {
+    if prompt.len() > 200 {
         return None;
     }
 
-        Some(CLM.predict_next(prompt, 1, 10))
+    Some(CLM.predict_next(prompt, 1, 3))
 
 }
 
