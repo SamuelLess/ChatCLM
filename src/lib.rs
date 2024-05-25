@@ -1,9 +1,12 @@
 pub mod app;
+pub mod chat;
+pub mod component;
 pub mod error_template;
 #[cfg(feature = "ssr")]
 pub mod fileserv;
-pub mod component;
+pub mod model;
 pub mod backend;
+
 
 #[cfg(feature = "hydrate")]
 #[wasm_bindgen::prelude::wasm_bindgen]

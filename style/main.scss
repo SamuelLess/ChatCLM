@@ -4,12 +4,22 @@
   padding: 0;
   font-family: Helvetica, sans-serif;
   font-size: 16px;
+  -webkit-font-smoothing: antialiased;
 }
 
 :root {
-  --navbar-height: 6rem;
-  --max-content-width: 70rem;
+  color-scheme: dark;
+
+  --max-content-width: 75rem;
   --content-side-padding: 5rem;
+
+  --color-background: #212121;
+  --color-container: #2f2f2f;
+  --color-container-hover: #424242;
+  --color-container-border: #e3e3e3;
+  --color-text: #ececec;
+  --color-text-secondary: #b4b4b4;
+  --color-button: #676767;
 }
 
 html {
@@ -17,80 +27,112 @@ html {
 }
 
 body {
-  min-height: 100vh;
-  background-color: dimgrey;
+  background-color: var(--color-background);
+}
+
+main {
+  display: grid;
+  grid-template-rows: max-content 1fr max-content;
+  height: 100vh;
+}
+
+.hidden {
+  display: none;
 }
 
 .navbar {
   width: 100%;
-  background-color: blue;
-  height: var(--navbar-height);
-  position: fixed;
-  top: 0;
+  background-color: var(--color-background);
   display: block;
   padding: 1rem var(--content-side-padding);
 }
 
 .prompt {
-  position: fixed;
-  bottom: 0;
   width: 100%;
-  background-color: black;
   display: grid;
   justify-items: center;
-  padding: 0.5rem var(--content-side-padding) 3rem var(--content-side-padding);
+  padding: 1rem var(--content-side-padding) 3rem var(--content-side-padding);
+  background-color: var(--color-background);
 
   &__wrapper {
     width: 100%;
     max-width: var(--max-content-width);
   }
+
+  &__disclaimer {
+    display: block;
+    text-align: center;
+    padding-top: 1rem;
+    color: var(--color-text-secondary);
+    font-size: 1.2rem;
+  }
 }
 
 .prompt_input {
-  padding: 0 0.5rem 0 3rem;
-  background-color: white;
-  border-radius: 3rem;
+  padding: 0 0 0 2rem;
+  border-radius: 2.3rem;
+  background-color: var(--color-container);
 
   &__textarea_wrapper {
     padding: 0.5rem;
     display: grid;
     grid-template-columns: 1fr 4rem;
     gap: 1rem;
-    align-items: center;
+    align-items: end;
+    position: relative;
   }
 
-  textarea {
+  &__textarea {
     width: 100%;
     border: none;
     outline: none;
     background: none;
     resize: none;
-    padding: 1rem 0;
+    padding: 0.75rem 0;
     line-height: 25px;
     display: block;
+    color: var(--color-text);
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 30vh;
+  }
+
+  &__textarea_placeholder {
+    position: absolute;
+    color: var(--color-text-secondary);
+    bottom: 1.6rem;
+    pointer-events: none;
   }
 
   &__send_button {
     width: 4rem;
     height: 4rem;
+    border: none;
     border-radius: 50%;
-    background-color: red;
-    color: white;
+    background-color: var(--color-button);
+    color: var(--color-container);
     display: grid;
-    place-items: center;
+    justify-items: center;
+    padding-top: 0.9rem;
     cursor: pointer;
     user-select: none;
+    font-weight: bold;
+    outline: none;
+
+    &:hover, &:focus {
+      background-color: var(--color-text);
+    }
   }
 }
 
 .chat {
   width: 100%;
-  background-color: green;
-  margin-top: var(--navbar-height);
-  padding: 2rem var(--content-side-padding);
-  display: grid;
-  justify-items: center;
+  padding: 4rem var(--content-side-padding);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 2rem;
+  overflow-y: auto;
 }
 
 .chat_message {
@@ -99,29 +141,33 @@ body {
   display: grid;
 
   p {
-    line-height: 1.5rem;
+    line-height: 1.5;
+    color: var(--color-text);
   }
 
   &__bubble {
-    padding: 1rem 2rem;
+    padding: 1.5rem 2rem;
     max-width: 70%;
     justify-self: end;
     border-radius: 2.5rem;
-    background-color: lime;
+    background-color: var(--color-container);
   }
 
   &__icon {
     width: 3.5rem;
     height: 3.5rem;
     border-radius: 50%;
-    border: 0.2rem solid blue;
+    border: 0.2rem solid var(--color-container);
     padding: 0.5rem;
+    display: grid;
+    justify-items: center;
 
     & > div {
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      background-color: aqua;
+      font-size: 4.5rem;
+      margin-top: -.5rem;
+      margin-left: 0.15rem;
+      text-align: center;
+      color: var(--color-text-secondary);
     }
   }
 }
@@ -131,12 +177,50 @@ body {
   gap: 2rem;
 
   & > p {
-    padding-top: 1rem;
+    padding-top: 0.5rem;
   }
 }
 
 .dropdown {
-  background-color: red;
-  width: 100px;
-  height: 100%;
+  position: relative;
+
+  &__selected {
+    width: max-content;
+    padding: 1.5rem 2.5rem;
+    border-radius: 1rem;
+    background-color: var(--color-container);
+    color: var(--color-text);
+    user-select: none;
+    cursor: pointer;
+    display: flex;
+    gap: 3rem;
+  }
+
+  &__icon {
+    color: var(--color-text-secondary);
+    transform: scaleX(1.5) rotate(90deg);
+  }
+
+  &__options {
+    width: max-content;
+    min-width: 250px;
+    background-color: var(--color-container);
+    position: absolute;
+    z-index: 3;
+    top: 5.5rem;
+    color: var(--color-text);
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+
+  &__option {
+    padding: 1.5rem 2rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      background-color: var(--color-container-hover);
+    }
+  }
 }

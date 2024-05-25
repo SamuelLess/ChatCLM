@@ -2,10 +2,10 @@
 #[tokio::main]
 async fn main() {
     use axum::Router;
+    use chatclm::app::*;
+    use chatclm::fileserv::file_and_error_handler;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
-    use chatclm::fileserv::file_and_error_handler;
-    use chatclm::app::*;
 
     // Setting get_configuration(None) means we'll be using cargo-leptos's env values
     // For deployment these variables are:

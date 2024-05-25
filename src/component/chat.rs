@@ -1,12 +1,19 @@
-use leptos::{component, IntoView, view};
+use crate::chat::ChatHistory;
 use crate::component::chat_message::ChatMessage;
+use leptos::{component, view, For, IntoView, ReadSignal};
 
 #[component]
-pub fn Chat() -> impl IntoView {
+pub fn Chat(chat: ReadSignal<ChatHistory>) -> impl IntoView {
     view! {
         <section class="chat">
-            <ChatMessage message=String::from("test") is_user_message=true />
-            <ChatMessage message=String::from("abcdef sjdf sdf djks") is_user_message=false />
+            <For
+                each=move || chat().messages.into_iter().enumerate()
+                key=|(idx, it)| format!("{}: {}", idx, it.message.clone())
+                children=move |(_, it)| {
+                    view! { <ChatMessage msg=it/> }
+                }
+            />
+
         </section>
     }
 }
