@@ -8,6 +8,8 @@
 }
 
 :root {
+  color-scheme: dark;
+
   --navbar-height: 7rem;
   --max-content-width: 75rem;
   --content-side-padding: 5rem;
@@ -69,8 +71,8 @@ body {
 }
 
 .prompt_input {
-  padding: 0 0.5rem 0 3rem;
-  border-radius: 3rem;
+  padding: 0 0 0 2rem;
+  border-radius: 2.3rem;
   background-color: var(--color-container);
 
   &__textarea_wrapper {
@@ -78,23 +80,28 @@ body {
     display: grid;
     grid-template-columns: 1fr 4rem;
     gap: 1rem;
-    align-items: center;
+    align-items: end;
   }
 
-  textarea {
+  &__textarea {
     width: 100%;
     border: none;
     outline: none;
     background: none;
     resize: none;
-    padding: 1rem 0;
+    padding: 0.75rem 0;
     line-height: 25px;
     display: block;
     color: var(--color-text);
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 30vh;
+  }
 
-    &::placeholder {
-      color: var(--color-text-secondary);
-    }
+  &__textarea_placeholder {
+    position: absolute;
+    color: var(--color-text-secondary);
+    top: 2rem;
   }
 
   &__send_button {
@@ -110,6 +117,11 @@ body {
     cursor: pointer;
     user-select: none;
     font-weight: bold;
+    outline: none;
+
+    &:hover, &:focus {
+      background-color: var(--color-text);
+    }
   }
 }
 

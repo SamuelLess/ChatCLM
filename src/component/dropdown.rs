@@ -16,6 +16,7 @@ pub fn Dropdown<const N: usize>(
                     set_open.update(|is_currently_open| *is_currently_open = !*is_currently_open)
                 }
             >
+
                 <div>{move || options[selected_option_index()]}</div>
                 <div class="dropdown__icon">></div>
             </div>
@@ -32,6 +33,7 @@ pub fn Dropdown<const N: usize>(
                                     set_selected_option_index.set(index);
                                 }
                             >
+
                                 {option}
                             </div>
                         }
