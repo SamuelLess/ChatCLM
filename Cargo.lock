@@ -379,6 +379,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "186dce98367766de751c42c4f03970fc60fc012296e706ccbb9d5df9b6c1e271"
 
 [[package]]
+name = "compchat"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "console_error_panic_hook",
+ "glob",
+ "http 1.1.0",
+ "leptos",
+ "leptos_axum",
+ "leptos_meta",
+ "leptos_router",
+ "rayon",
+ "thiserror",
+ "tiktoken-rs",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tracing",
+ "wasm-bindgen",
+ "zstd",
+ "zstd-sys",
+]
+
+[[package]]
 name = "config"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -946,6 +970,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1045,7 +1078,7 @@ dependencies = [
  "getrandom",
  "html-escape",
  "indexmap",
- "itertools",
+ "itertools 0.12.1",
  "js-sys",
  "leptos_reactive",
  "once_cell",
@@ -1104,7 +1137,7 @@ dependencies = [
  "cfg-if",
  "convert_case",
  "html-escape",
- "itertools",
+ "itertools 0.12.1",
  "leptos_hot_reload",
  "prettyplease",
  "proc-macro-error",
@@ -1167,7 +1200,7 @@ dependencies = [
  "cached",
  "cfg-if",
  "gloo-net",
- "itertools",
+ "itertools 0.12.1",
  "js-sys",
  "lazy_static",
  "leptos",
