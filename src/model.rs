@@ -60,7 +60,7 @@ static CLM: LazyLock<CLM> = LazyLock::new(CLM::new);
 #[cfg(feature = "ssr")]
 pub async fn chat_clm_next_token(prompt: String ) -> Option<String> {
 
-    if prompt.len() > 200 {
+    if prompt.len() > 250 {
         return None;
     }
 

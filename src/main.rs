@@ -1,9 +1,13 @@
 use chatclm::app::App;
+#[cfg(feature = "ssr")]
+use chatclm::backend::create_dictionary;
+#[cfg(feature = "ssr")]
 use chatclm::fileserv::file_and_error_handler;
+
 
 #[cfg(feature = "ssr")]
 #[tokio::main]
-async fn main() {
+async fn leptos_main() {
     use axum::Router;
     use leptos::*;
     use leptos_axum::{generate_route_list, LeptosRoutes};
@@ -29,6 +33,11 @@ async fn main() {
     axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
+}
+#[cfg(feature = "ssr")]
+fn main() {
+    leptos_main();
+    //create_dictionary();
 }
 
 #[cfg(not(feature = "ssr"))]

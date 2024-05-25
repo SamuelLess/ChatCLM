@@ -4,12 +4,12 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::string::String;
 
-use regex::Regex;
 use glob::glob;
 use itertools::Itertools;
 use rand::{Rng, thread_rng};
 use rand::seq::SliceRandom;
 use rayon::iter::*;
+use regex::Regex;
 use tiktoken_rs::{CoreBPE, p50k_base};
 use zstd;
 use zstd::dict::{DecoderDictionary, EncoderDictionary};
@@ -46,31 +46,33 @@ fn find_datasets() -> Vec<String> {
 pub fn create_dictionary() {
     let (tokens, mut sizes) = tokenize_files();
     let raw_data = tokens_to_bytes(tokens);
-
     // multiply everything by 2 as tokens get to be compressed to u64
     sizes = sizes.iter().map(|x| x * 8).collect();
 
     let buffer_size = raw_data.len(); // 100% of training size
+
+    assert_eq!(sizes.iter().sum::<usize>(), raw_data.len(), "Sizes sum doesn't match raw data size");
+
     let mut buffer = vec![0u8; buffer_size];
 
-    unsafe {
-        let mut parameters = zstd_sys::ZDICT_fastCover_params_t {
-            k: 50,
-            d: 8,
-            f: 25,
-            steps: 4,
-            nbThreads: 8,
-            splitPoint: 0.0,
-            accel: 1,
-            shrinkDict: 0,
-            shrinkDictMaxRegression: 0,
-            zParams: zstd_sys::ZDICT_params_t {
-                compressionLevel: 3,
-                notificationLevel: 4,
-                dictID: 0,
-            },
-        };
+    let mut parameters = zstd_sys::ZDICT_fastCover_params_t {
+        k: 50,
+        d: 8,
+        f: 25,
+        steps: 4,
+        nbThreads: 8,
+        splitPoint: 0.0,
+        accel: 1,
+        shrinkDict: 0,
+        shrinkDictMaxRegression: 0,
+        zParams: zstd_sys::ZDICT_params_t {
+            compressionLevel: 3,
+            notificationLevel: 4,
+            dictID: 0,
+        },
+    };
 
+    unsafe {
         let size = ZDICT_optimizeTrainFromBuffer_fastCover(
             buffer.as_mut_ptr() as *mut c_void,
             buffer_size,
@@ -80,6 +82,8 @@ pub fn create_dictionary() {
             &mut parameters,
         );
         println!("Selected parameters: {:?}", parameters);
+        println!("Dictionary size: {:?}", size);
+
         if ZDICT_isError(size) != 0 {
             panic!("Failed to train dictionary");
         }
@@ -96,6 +100,16 @@ pub fn tokenize_files() -> (Vec<Token>, Vec<usize>) {
     let tokenizer = p50k_base().unwrap();
     let re = Regex::new(r"^\d+\s").unwrap();
 
+    let pb = indicatif::ProgressBar::new(0);
+    pb.set_style(indicatif::ProgressStyle::default_bar().template("{msg} {bar:60.cyan/blue} {pos}/{len} {per_sec}").unwrap());
+    pb.set_message("Tokenizing");
+    pb.set_length(find_datasets().iter().map(|file|
+        BufReader::new(File::open(file).unwrap())
+            .lines()
+            .count() as u64
+    ).sum());
+
+
     find_datasets()
         .iter()
         .flat_map(|filename| {
@@ -106,10 +120,10 @@ pub fn tokenize_files() -> (Vec<Token>, Vec<usize>) {
         .par_bridge()
         .map(|x| x.expect("Failed to read line"))
         .map(|x| re.replace_all(&x, "").to_string())
-        //.map(|x| {println!("{:?}", x); x})
         .map(|x| tokenizer.encode_ordinary(&x) as Vec<Token>)
         .map(|x| {
             let len = x.len();
+            pb.inc(1);
             (x, vec![len])
         })
         .reduce(
@@ -137,7 +151,7 @@ pub fn decompress_to_tokens(compressed: &[u8]) -> Vec<Token> {
     tokens
 }
 
-const INFERENCE_COMPRESSION_LEVEL : i32 = 1;
+const INFERENCE_COMPRESSION_LEVEL: i32 = 1;
 
 impl<'a> CLM<'a> {
     pub fn new() -> Self {
@@ -172,7 +186,7 @@ impl<'a> CLM<'a> {
         let mut tokens = self.tokenizer.encode_ordinary(&prompt);
         let (next_token, _size) = self.predict_tokens(tokens.clone(), depth, width);
         tokens.push(next_token);
-        self.tokenizer.decode(tokens).unwrap_or(prompt)
+        self.tokenizer.decode(tokens).unwrap_or(prompt + "<error>")
     }
 
     pub fn predict_diffusion(&self, prompt: String) -> String {
@@ -199,7 +213,11 @@ impl<'a> CLM<'a> {
 
         c.sort_by(|a, b| a.1.cmp(&b.1));
 
-        println!("Predicting tokens: {:?}", c.clone().iter().map(|x|x.1).counts());
+        let mut hist = c.iter().map(|x| x.1).counts().iter().map(|(k, v)| (*k, *v)).collect::<Vec<_>>();
+        hist.sort_by(|a, b| a.1.cmp(&b.1));
+
+
+        println!("Predicting tokens: {:?}", hist);
 
         if depth == 0 {
             return c[0];
@@ -291,7 +309,7 @@ pub mod tests {
     #[test]
     fn compress_data() {
         let clm = CLM::new();
-        let start : Vec<Token> = clm.tokenizer.encode_ordinary("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin tincidunt urna nisl, non molestie velit aliquam nec. In in erat id est porttitor efficitur ac eleifend ex. Nam auctor lacus urna, a sodales metus bibendum ut. Vestibulum vulputate facilisis ultrices. Vestibulum ut euismod erat. Maecenas pretium egestas nunc, non efficitur eros interdum eget. Suspendisse eleifend augue eu viverra rutrum. Phasellus non elementum erat, sit amet ultrices nunc. Sed facilisis at ipsum nec sagittis. Nulla non placerat purus. Pellentesque sed mollis enim. Praesent tincidunt purus id tellus tristique, ut rhoncus justo fringilla. Suspendisse fermentum ultrices dolor, vel mollis enim. Aliquam eros.");
+        let start: Vec<Token> = clm.tokenizer.encode_ordinary("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin tincidunt urna nisl, non molestie velit aliquam nec. In in erat id est porttitor efficitur ac eleifend ex. Nam auctor lacus urna, a sodales metus bibendum ut. Vestibulum vulputate facilisis ultrices. Vestibulum ut euismod erat. Maecenas pretium egestas nunc, non efficitur eros interdum eget. Suspendisse eleifend augue eu viverra rutrum. Phasellus non elementum erat, sit amet ultrices nunc. Sed facilisis at ipsum nec sagittis. Nulla non placerat purus. Pellentesque sed mollis enim. Praesent tincidunt purus id tellus tristique, ut rhoncus justo fringilla. Suspendisse fermentum ultrices dolor, vel mollis enim. Aliquam eros.");
         let compressed = clm.compress(start.clone());
 
         println!("Compressed size: {}", compressed.len());
