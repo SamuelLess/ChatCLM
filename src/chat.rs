@@ -12,7 +12,7 @@ pub struct Message {
 }
 
 impl Message {
-    pub fn user_msg(&self) -> bool {
+    pub fn is_user_msg(&self) -> bool {
         self.sender == Sender::User
     }
 }

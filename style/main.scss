@@ -8,12 +8,13 @@
 }
 
 :root {
-  --navbar-height: 6rem;
+  --navbar-height: 7rem;
   --max-content-width: 75rem;
   --content-side-padding: 5rem;
 
   --color-background: #212121;
   --color-container: #2f2f2f;
+  --color-container-hover: #424242;
   --color-container-border: #e3e3e3;
   --color-text: #ececec;
   --color-text-secondary: #b4b4b4;
@@ -28,11 +29,16 @@ body {
   background-color: var(--color-background);
 }
 
+.hidden {
+  display: none;
+}
+
 .navbar {
   width: 100%;
   background-color: var(--color-background);
   height: var(--navbar-height);
   position: fixed;
+  z-index: 1;
   top: 0;
   display: block;
   padding: 1rem var(--content-side-padding);
@@ -41,6 +47,7 @@ body {
 .prompt {
   position: fixed;
   bottom: 0;
+  z-index: 2;
   width: 100%;
   display: grid;
   justify-items: center;
@@ -109,7 +116,7 @@ body {
 .chat {
   width: 100%;
   margin-top: var(--navbar-height);
-  padding: 2rem var(--content-side-padding);
+  padding: 4rem var(--content-side-padding);
   display: grid;
   justify-items: center;
   gap: 2rem;
@@ -121,7 +128,7 @@ body {
   display: grid;
 
   p {
-    line-height: 1.5rem;
+    line-height: 1.5;
     color: var(--color-text);
   }
 
@@ -154,12 +161,50 @@ body {
   gap: 2rem;
 
   & > p {
-    padding-top: 1rem;
+    padding-top: 0.5rem;
   }
 }
 
 .dropdown {
-  background-color: red;
-  width: 100px;
-  height: 100%;
+  position: relative;
+
+  &__selected {
+    width: max-content;
+    padding: 1.5rem 2.5rem;
+    border-radius: 1rem;
+    background-color: var(--color-container);
+    color: var(--color-text);
+    user-select: none;
+    cursor: pointer;
+    display: flex;
+    gap: 3rem;
+  }
+
+  &__icon {
+    color: var(--color-text-secondary);
+    transform: scaleX(1.5) rotate(90deg);
+  }
+
+  &__options {
+    width: max-content;
+    min-width: 250px;
+    background-color: var(--color-container);
+    position: absolute;
+    z-index: 3;
+    top: 5.5rem;
+    color: var(--color-text);
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+
+  &__option {
+    padding: 1.5rem 2rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      background-color: var(--color-container-hover);
+    }
+  }
 }
