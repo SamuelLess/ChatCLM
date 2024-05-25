@@ -1,3 +1,19 @@
 services:
     web:
       build: .
+      expose:
+        - "3000"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.chatclm.rule=Host(`chatclm.nglodny.de`) || Host(`chatclm.xyz`)"
+        - "traefik.http.routers.chatclm.tls=true"
+        - "traefik.http.routers.chatclm.tls.certresolver=letsencrypt"
+        - "traefik.http.middlewares.chatclm.compress=true"
+        - "treafik.http.routers.chatclm.middlewares=chatclm@docker"
+        - "traefik.http.routers.chatclm.entrypoints=web,websecure"
+      networks:
+        - traefik
+networks:
+  traefik:
+    external: true
+
