@@ -1,4 +1,4 @@
-#[cfg(feature = "ssr")]
+/*#[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
     use axum::Router;
@@ -28,11 +28,27 @@ async fn main() {
     axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
+}*/
+
+use compchat::backend::*;
+pub  fn main() {
+    let (tokens, sizes) = tokenize_files();
+
+    let start = &tokens[1000..2000];
+    
+    let clm = CLM::new();
+    let compressed = clm.compress(start.to_vec());
+    println!("Compressed size: {}", compressed.len());
+    println!("Decompressed size: {}", tokens_to_bytes(start.to_vec()).len());
+    println!("Compressed size without dict: {}", zstd::bulk::compress(&tokens_to_bytes(start.to_vec()), 3).unwrap().len());
+    let decompressed = decompress_to_tokens(&compressed);
+
+    assert_eq!(decompressed, start);
 }
 
-#[cfg(not(feature = "ssr"))]
+/*#[cfg(not(feature = "ssr"))]
 pub fn main() {
     // no client-side main function
     // unless we want this to work with e.g., Trunk for a purely client-side app
     // see mod for hydration function instead
-}
+}*/
