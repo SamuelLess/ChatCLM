@@ -93,6 +93,7 @@ body {
   &__send_button {
     width: 4rem;
     height: 4rem;
+    border: none;
     border-radius: 50%;
     background-color: var(--color-button);
     color: var(--color-container);

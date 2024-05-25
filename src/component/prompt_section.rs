@@ -1,8 +1,9 @@
-use leptos::{component, IntoView, view};
+use crate::chat::ChatHistory;
 use crate::component::prompt_input::PromptInput;
+use leptos::{component, view, IntoView, WriteSignal};
 
 #[component]
-pub fn PromptSection() -> impl IntoView {
+pub fn PromptSection(set_chat: WriteSignal<ChatHistory>) -> impl IntoView {
     view! {
         <section class="prompt">
             <div class="prompt__wrapper">

@@ -1,15 +1,25 @@
+use crate::chat::ChatHistory;
+use crate::component::chat::Chat;
+use crate::component::navbar::NavBar;
+use crate::component::prompt_section::PromptSection;
 use crate::error_template::{AppError, ErrorTemplate};
 use leptos::*;
 use leptos_meta::*;
 use leptos_router::*;
-use crate::component::chat::Chat;
-use crate::component::navbar::NavBar;
-use crate::component::prompt_section::PromptSection;
 
 #[component]
 pub fn App() -> impl IntoView {
     // Provides context that manages stylesheets, titles, meta tags, etc.
     provide_meta_context();
+
+    // create chat as reactive signal object
+    let (chat, set_chat) = create_signal(ChatHistory::default());
+    // fill with dummy data
+    set_chat.update(|chat| {
+        chat.new_sever_message("Welcome to ChatCLM!".to_string());
+        chat.new_sever_message("Type a message and press Enter to chat.".to_string());
+        chat.new_user_message("Type a message and press Enter to chat.".to_string());
+    });
 
     view! {
         // injects a stylesheet into the document <head>
@@ -30,7 +40,7 @@ pub fn App() -> impl IntoView {
         }>
             <main>
                 <Routes>
-                    <Route path="" view=HomePage/>
+                    <Route path="" view=move || view! {<HomePage chat=chat set_chat=set_chat/>}/>
                 </Routes>
             </main>
         </Router>
@@ -38,12 +48,12 @@ pub fn App() -> impl IntoView {
 }
 
 #[component]
-fn HomePage() -> impl IntoView {
+fn HomePage(chat: ReadSignal<ChatHistory>, set_chat: WriteSignal<ChatHistory>) -> impl IntoView {
     view! {
         <NavBar/>
 
-        <Chat/>
+        <Chat chat=chat/>
 
-        <PromptSection/>
+        <PromptSection set_chat=set_chat/>
     }
 }

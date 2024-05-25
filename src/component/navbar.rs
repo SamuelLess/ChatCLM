@@ -1,4 +1,4 @@
-use leptos::{component, IntoView, view};
+use leptos::{component, view, IntoView};
 // use crate::component::dropdown::Dropdown;
 
 #[component]
