@@ -19,6 +19,7 @@ RUN rustup target add wasm32-unknown-unknown
 # Make an /app dir, which everything will eventually live in
 RUN mkdir -p /app
 WORKDIR /app
+# Ignore the ./target dir
 COPY . .
 
 # Build the app
@@ -32,7 +33,6 @@ RUN apt-get update -y \
   && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/*
 
-# -- NB: update binary name from "chatclm" to match your app name in Cargo.toml --
 # Copy the server binary to the /app directory
 COPY --from=builder /app/target/release/chatclm /app/
 
@@ -41,6 +41,9 @@ COPY --from=builder /app/target/site /app/site
 
 # Copy Cargo.toml if it’s needed at runtime
 COPY --from=builder /app/Cargo.toml /app/
+
+# Copy the zstd dictionary as it's needed at runtime
+COPY --from=builder /app/model.zstd_dict /app/
 
 # Set any required env variables and
 ENV RUST_LOG="info"
