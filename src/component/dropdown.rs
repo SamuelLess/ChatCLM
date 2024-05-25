@@ -1,4 +1,6 @@
-use leptos::{component, create_signal, For, IntoView, ReadSignal, SignalSet, SignalUpdate, view, WriteSignal};
+use leptos::{
+    component, create_signal, view, For, IntoView, ReadSignal, SignalSet, SignalUpdate, WriteSignal,
+};
 
 #[component]
 pub fn Dropdown<const N: usize>(

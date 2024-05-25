@@ -1,5 +1,5 @@
-use leptos::{component, create_signal, IntoView, view};
 use crate::component::dropdown::Dropdown;
+use leptos::{component, create_signal, view, IntoView};
 
 #[derive(Copy, Clone)]
 enum Model {

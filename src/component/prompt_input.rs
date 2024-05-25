@@ -1,4 +1,6 @@
-use leptos::{component, view, Callback, IntoView, Show, NodeRef, html, create_node_ref, create_signal};
+use leptos::{
+    component, create_node_ref, create_signal, html, view, Callback, IntoView, NodeRef, Show,
+};
 
 #[component]
 pub fn PromptInput(on_submit: Callback<String>) -> impl IntoView {

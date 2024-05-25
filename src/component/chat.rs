@@ -8,7 +8,7 @@ pub fn Chat(chat: ReadSignal<ChatHistory>) -> impl IntoView {
         <section class="chat">
             <For
                 each=move || chat().messages.into_iter().enumerate()
-                key=|(it, _)| *it
+                key=|(idx, it)| format!("{}: {}", idx, it.message.clone())
                 children=move |(_, it)| {
                     view! { <ChatMessage msg=it/> }
                 }

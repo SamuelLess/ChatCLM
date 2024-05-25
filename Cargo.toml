@@ -21,6 +21,7 @@ thiserror = "1"
 tracing = { version = "0.1", optional = true }
 http = "1"
 chrono = "0.4.38"
+rand = "0.8.5"
 
 [features]
 hydrate = ["leptos/hydrate", "leptos_meta/hydrate", "leptos_router/hydrate"]

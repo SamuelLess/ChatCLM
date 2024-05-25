@@ -16,9 +16,9 @@ pub fn App() -> impl IntoView {
     let (chat, set_chat) = create_signal(ChatHistory::default());
     // fill with dummy data
     set_chat.update(|chat| {
-        chat.new_sever_message("Welcome to ChatCLM!".to_string());
-        chat.new_sever_message("Another Server message.".to_string());
-        chat.new_user_message("Type a message and press Enter to chat.".to_string());
+        chat.new_server_message("Welcome to ChatCLM!".to_string());
+        chat.new_user_message("Hello!".to_string());
+        chat.new_server_message("Type a message and press Enter to chat.".to_string());
     });
 
     view! {
