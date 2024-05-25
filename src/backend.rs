@@ -4,7 +4,11 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::string::String;
 
+use regex::Regex;
 use glob::glob;
+use itertools::Itertools;
+use rand::{Rng, thread_rng};
+use rand::seq::SliceRandom;
 use rayon::iter::*;
 use tiktoken_rs::{CoreBPE, p50k_base};
 use zstd;
@@ -47,8 +51,8 @@ pub fn create_dictionary() {
     // multiply everything by 2 as tokens get to be compressed to u16
     sizes = sizes.iter().map(|x| x * 2).collect();
 
-    let dict_size = raw_data.len() / 10; // 10% of training size
-    let mut buffer = vec![0u8; dict_size];
+    let buffer_size = raw_data.len() / 10; // 10% of training size
+    let mut buffer = vec![0u8; buffer_size];
 
     unsafe {
         let mut parameters = zstd_sys::ZDICT_fastCover_params_t {
@@ -62,14 +66,15 @@ pub fn create_dictionary() {
             shrinkDict: 0,
             shrinkDictMaxRegression: 0,
             zParams: zstd_sys::ZDICT_params_t {
-                compressionLevel: 0,
-                notificationLevel: 3,
+                compressionLevel: 3,
+                notificationLevel: 4,
                 dictID: 0,
             },
         };
+
         let size = ZDICT_optimizeTrainFromBuffer_fastCover(
             buffer.as_mut_ptr() as *mut c_void,
-            dict_size,
+            buffer_size,
             raw_data.as_ptr() as *mut c_void,
             sizes.as_ptr(),
             sizes.len() as c_uint,
@@ -90,17 +95,23 @@ pub fn create_dictionary() {
 
 pub fn tokenize_files() -> (Vec<Token>, Vec<usize>) {
     let tokenizer = p50k_base().unwrap();
+    let re = Regex::new(r"^\d+\s").unwrap();
 
     find_datasets()
         .iter()
         .flat_map(|filename| {
             let file = File::open(filename).unwrap();
+            println!("Reading file: {:?}", filename);
             BufReader::new(file).lines()
         })
         .par_bridge()
         .map(|x| x.expect("Failed to read line"))
-        .map(|x| x.trim_start_matches(""))
-        .map(|x| (tokenizer.encode_ordinary(&x) as Vec<Token>, vec![x.len()]))
+        .map(|x| re.replace_all(&x, "").to_string())
+        .map(|x| tokenizer.encode_ordinary(&x) as Vec<Token>)
+        .map(|x| {
+            let len = x.len();
+            (x, vec![len])
+        })
         .reduce(
             || (Vec::new(), Vec::new()),
             |(mut tok_acc, mut len_acc), (tok, len)| {
@@ -126,9 +137,12 @@ pub fn decompress_to_tokens(compressed: &[u8]) -> Vec<Token> {
     tokens
 }
 
-impl<'a> CLM <'a> {
+const INFERENCE_COMPRESSION_LEVEL : i32 = 1;
+
+impl<'a> CLM<'a> {
     pub fn new() -> Self {
-        let dict = EncoderDictionary::copy(CLM::read_dict().as_slice(), 3);
+
+        let dict = EncoderDictionary::copy(CLM::read_dict().as_slice(), INFERENCE_COMPRESSION_LEVEL);
         let tokenizer = p50k_base().unwrap();
         Self { dict, tokenizer }
     }
@@ -141,12 +155,12 @@ impl<'a> CLM <'a> {
     }
 
 
-
     pub fn compress(&self, tokens: Vec<Token>) -> Vec<u8> {
         let raw_data = tokens_to_bytes(tokens);
 
         // memory writer
         let mut writer = zstd::stream::write::Encoder::with_prepared_dictionary(Vec::new(), &self.dict).unwrap();
+
 
         // write dictionary to memory writer
         writer.write_all(&raw_data).unwrap();
@@ -159,27 +173,75 @@ impl<'a> CLM <'a> {
         let mut tokens = self.tokenizer.encode_ordinary(&prompt);
         let next_token = self.predict_token(tokens.clone());
         tokens.push(next_token);
-        self.tokenizer.decode(tokens).unwrap()
+        self.tokenizer.decode(tokens).unwrap_or(prompt)
+    }
+
+    pub fn predict_diffusion(&self, prompt: String) -> String {
+        let mut tokens = self.tokenizer.encode_ordinary(&prompt);
+        let next_tokens = self.predict_tokens_diffusion(tokens.clone());
+        tokens.extend_from_slice(&next_tokens);
+        self.tokenizer.decode(tokens).unwrap_or(prompt)
     }
 
     fn predict_token(&self, tokens: Vec<Token>) -> Token {
-        (1..MAX_TOKEN)
+        let sizes = (1..MAX_TOKEN)
             .par_bridge()
             .map(|x| x as Token)
+            .filter(|token| !tokens.as_slice()[tokens.len()-5..].contains(token))
             .map(|x| {
                 let mut prompt = tokens.clone();
                 prompt.push(x);
                 (x, self.compress(prompt).len())
-            })
-            .reduce(|| (0u16 as Token, usize::MAX), |(min_tok, min_size), (tok, size)| {
-                if size < min_size { (tok, size) } else { (min_tok, min_size) }
+            });
+
+        let mut c: Vec<(Token, usize)> = sizes.collect();
+        c.shuffle(&mut thread_rng());
+
+        println!("{:?}", c.iter().map(|x| x.1).counts());
+
+        c.iter()
+            .fold((0u16 as Token, usize::MAX), |(min_tok, min_size), (tok, size)| {
+                if *size <= min_size {
+                    (*tok, *size)
+                } else {
+                    (min_tok, min_size)
+                }
             })
             .0
     }
 
+    fn compress_with_prompt(&self, prompt: &Vec<Token>, tokens: &Vec<Token>) -> usize {
+        let mut prompt = prompt.clone();
+        prompt.extend_from_slice(&tokens);
+        self.compress(prompt).len()
+    }
+
+    fn predict_tokens_diffusion(&self, prompt: Vec<Token>) -> Vec<Token> {
+        let mut rng = thread_rng();
+
+        let mut current_tokens = (1..20).map(|_| thread_rng().gen_range(0..MAX_TOKEN) as Token).collect_vec();
+        let mut current_compression = self.compress_with_prompt(&prompt, &current_tokens);
+
+        for i in 0..1000000 {
+            let mut next_tokens = current_tokens.clone();
+            let random_index = rng.gen_range(0..next_tokens.len());
+            next_tokens[random_index] = rng.gen_range(0..MAX_TOKEN) as Token;
+
+            let next_compression = self.compress_with_prompt(&prompt, &next_tokens);
+
+            if next_compression < current_compression {
+                current_tokens = next_tokens;
+                current_compression = next_compression;
+
+                println!("Iteration: {}, Compression: {}, Values: '{}'", i, current_compression, self.tokenizer.decode(current_tokens.clone()).unwrap_or("error".to_string()));
+            }
+        }
+
+        current_tokens
+    }
 }
 
-mod tests {
+pub mod tests {
     use crate::backend::*;
 
     #[test]
@@ -202,20 +264,21 @@ mod tests {
         create_dictionary();
     }
 
-    #[test]
-    fn test_predict_token() {
-        let mut prompt = "A frontman, often seen as the face and voice of a musical band, plays a pivotal role in defining the band's identity and engaging with the audience. This role extends beyond merely singing; it encompasses a dynamic blend of charisma, stage presence, and the ability to connect with the crowd. The frontman leads the performance, sets the tone, and often shapes the band's public image through their interactions both on and off the stage.
-Historically, iconic frontmen like Freddie Mercury of Queen, Mick Jagger of The Rolling Stones, and Robert Plant of Led Zeppelin have left indelible marks on the music industry with their electrifying performances and distinctive personas. Their ability to captivate audiences not only relied on vocal prowess but also on their unique style".to_string();
+    pub fn predict_loop() {
+        // create text for a test prompt
+        let mut prompt = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy".to_string();
+
         let clm = CLM::new();
 
         println!("{}", prompt);
 
-        for _ in 0..10 {
+        for _ in 0..100 {
             prompt = clm.predict_next(prompt.clone());
             println!("{}", prompt)
         }
-
     }
+
+    pub fn test_predict_token() {}
 
     //#[test]
     //fn compress_data() {

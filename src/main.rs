@@ -32,18 +32,8 @@ async fn main() {
 
 use compchat::backend::*;
 pub  fn main() {
-    let (tokens, sizes) = tokenize_files();
-
-    let start = &tokens[1000..2000];
-    
-    let clm = CLM::new();
-    let compressed = clm.compress(start.to_vec());
-    println!("Compressed size: {}", compressed.len());
-    println!("Decompressed size: {}", tokens_to_bytes(start.to_vec()).len());
-    println!("Compressed size without dict: {}", zstd::bulk::compress(&tokens_to_bytes(start.to_vec()), 3).unwrap().len());
-    let decompressed = decompress_to_tokens(&compressed);
-
-    assert_eq!(decompressed, start);
+    //compchat::backend::create_dictionary();
+    compchat::backend::tests::predict_loop();
 }
 
 /*#[cfg(not(feature = "ssr"))]
