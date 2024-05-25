@@ -14,6 +14,7 @@ pub fn App() -> impl IntoView {
 
     // create chat as reactive signal object
     let (chat, set_chat) = create_signal(ChatHistory::default());
+    let (selected_model_index, set_selected_model_index) = create_signal(0usize);
     // fill with dummy data
     set_chat.update(|chat| {
         chat.new_server_message("Welcome to ChatCLM!".to_string());
@@ -35,7 +36,19 @@ pub fn App() -> impl IntoView {
         }>
             <main>
                 <Routes>
-                    <Route path="" view=move || view! { <HomePage chat=chat set_chat=set_chat/> }/>
+                    <Route
+                        path=""
+                        view=move || {
+                            view! {
+                                <HomePage
+                                    chat=chat
+                                    set_chat=set_chat
+                                    selected_model_index=selected_model_index
+                                    set_selected_model_index=set_selected_model_index
+                                />
+                            }
+                        }
+                    />
                 </Routes>
             </main>
         </Router>
@@ -43,12 +56,20 @@ pub fn App() -> impl IntoView {
 }
 
 #[component]
-fn HomePage(chat: ReadSignal<ChatHistory>, set_chat: WriteSignal<ChatHistory>) -> impl IntoView {
+fn HomePage(
+    chat: ReadSignal<ChatHistory>,
+    set_chat: WriteSignal<ChatHistory>,
+    selected_model_index: ReadSignal<usize>,
+    set_selected_model_index: WriteSignal<usize>,
+) -> impl IntoView {
     view! {
-        <NavBar/>
+        <NavBar
+            selected_model_index=selected_model_index
+            set_selected_model_index=set_selected_model_index
+        />
 
         <Chat chat=chat/>
 
-        <PromptSection set_chat=set_chat/>
+        <PromptSection set_chat=set_chat selected_model_index=selected_model_index/>
     }
 }

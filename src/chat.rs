@@ -1,5 +1,3 @@
-use leptos::{server, ServerFnError};
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Sender {
     User,
@@ -51,25 +49,5 @@ impl ChatHistory {
                 last_message.message = message;
             }
         }
-    }
-}
-
-#[server(GetNextToken, "/api")]
-pub async fn get_next_token(prompt: String) -> Result<Option<String>, ServerFnError> {
-    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-    let random_number = rand::random::<u8>() % 7 + 1;
-    if random_number == 1 {
-        return Ok(None);
-    }
-    Ok(Some(format!("{} next", prompt)))
-}
-
-pub fn cut_prompt(prompt: &String, response: &String) -> String {
-    let prompt = prompt.trim();
-    let response = response.trim();
-    if response.starts_with(prompt) {
-        response[prompt.len()..].trim().to_string()
-    } else {
-        response.to_string()
     }
 }

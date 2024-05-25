@@ -1,15 +1,20 @@
-use crate::chat::{cut_prompt, get_next_token, ChatHistory};
+use crate::chat::ChatHistory;
 use crate::component::prompt_input::PromptInput;
+use crate::model::{cut_prompt, get_next_token};
 use leptos::{
     component, spawn_local, view, Callback, IntoView, ReadSignal, SignalUpdate, WriteSignal,
 };
 
 #[component]
-pub fn PromptSection(set_chat: WriteSignal<ChatHistory>) -> impl IntoView {
+pub fn PromptSection(
+    set_chat: WriteSignal<ChatHistory>,
+    selected_model_index: ReadSignal<usize>,
+) -> impl IntoView {
     view! {
         <section class="prompt">
             <div class="prompt__wrapper">
                 <PromptInput on_submit=Callback::new(move |prompt: String| {
+                    let model_idx = selected_model_index();
                     set_chat
                         .update(|chat| {
                             chat.new_user_message(prompt.clone());
@@ -19,7 +24,8 @@ pub fn PromptSection(set_chat: WriteSignal<ChatHistory>) -> impl IntoView {
                             .update(|chat| {
                                 chat.new_server_message("thinking...".to_string());
                             });
-                        if let Ok(Some(response)) = get_next_token(prompt.clone()).await {
+                        if let Ok(Some(response)) = get_next_token(model_idx, prompt.clone()).await
+                        {
                             set_chat
                                 .update(|chat| {
                                     chat.replace_last_server_message(
@@ -27,7 +33,9 @@ pub fn PromptSection(set_chat: WriteSignal<ChatHistory>) -> impl IntoView {
                                     );
                                 });
                             let mut response = response;
-                            while let Ok(Some(stream)) = get_next_token(response.clone()).await {
+                            while let Ok(Some(stream)) = get_next_token(model_idx, response.clone())
+                                .await
+                            {
                                 set_chat
                                     .update(|chat| {
                                         chat.replace_last_server_message(

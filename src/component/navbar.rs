@@ -1,27 +1,12 @@
 use crate::component::dropdown::Dropdown;
-use leptos::{component, create_signal, view, IntoView};
-
-#[derive(Copy, Clone)]
-enum Model {
-    ChatCLM1_0,
-    ChatGPT3_5,
-    ChatGPT4o,
-}
-
-impl Model {
-    pub fn name(&self) -> &'static str {
-        match self {
-            Model::ChatCLM1_0 => "ChatCLM 1.0",
-            Model::ChatGPT3_5 => "ChatGPT 3.5",
-            Model::ChatGPT4o => "ChatGPT 4o",
-        }
-    }
-}
+use crate::model::Model;
+use leptos::{component, create_signal, view, IntoView, ReadSignal, WriteSignal};
 
 #[component]
-pub fn NavBar() -> impl IntoView {
-    let (selected_model_index, set_selected_model_index) = create_signal(0usize);
-
+pub fn NavBar(
+    selected_model_index: ReadSignal<usize>,
+    set_selected_model_index: WriteSignal<usize>,
+) -> impl IntoView {
     view! {
         <nav class="navbar">
             <Dropdown
@@ -29,6 +14,7 @@ pub fn NavBar() -> impl IntoView {
                     Model::ChatCLM1_0.name(),
                     Model::ChatGPT3_5.name(),
                     Model::ChatGPT4o.name(),
+                    Model::ChatRandom.name(),
                 ]
 
                 selected_option_index=selected_model_index
