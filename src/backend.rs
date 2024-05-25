@@ -1,5 +1,5 @@
 use std::ffi::{c_uint, c_void};
-use std::fmt::{Debug, Display};
+use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::string::String;
@@ -19,7 +19,6 @@ use zstd_sys::ZDICT_optimizeTrainFromBuffer_fastCover;
 
 // https://wortschatz.uni-leipzig.de/en/download/English
 const DATA_PATH: &str = "./data";
-const DICT_SIZE_BYTES: usize = 1024 * 1024;
 
 const MAX_TOKEN: u16 = 50280; // Please update if u use another tokenizer!!!!
 
@@ -32,7 +31,7 @@ pub struct CLM<'a> {
 type Token = usize;
 
 pub fn tokens_to_bytes(tokens: Vec<Token>) -> Vec<u8> {
-    tokens.iter().flat_map(|x| (*x as u16).to_le_bytes()).collect()
+    tokens.iter().flat_map(|x| (*x).to_be_bytes()).collect()
 }
 
 fn find_datasets() -> Vec<String> {
@@ -48,17 +47,17 @@ pub fn create_dictionary() {
     let (tokens, mut sizes) = tokenize_files();
     let raw_data = tokens_to_bytes(tokens);
 
-    // multiply everything by 2 as tokens get to be compressed to u16
-    sizes = sizes.iter().map(|x| x * 2).collect();
+    // multiply everything by 2 as tokens get to be compressed to u64
+    sizes = sizes.iter().map(|x| x * 8).collect();
 
-    let buffer_size = raw_data.len() / 10; // 10% of training size
+    let buffer_size = raw_data.len(); // 100% of training size
     let mut buffer = vec![0u8; buffer_size];
 
     unsafe {
         let mut parameters = zstd_sys::ZDICT_fastCover_params_t {
-            k: 0,
-            d: 0,
-            f: 20,
+            k: 50,
+            d: 8,
+            f: 25,
             steps: 4,
             nbThreads: 8,
             splitPoint: 0.0,
@@ -80,7 +79,7 @@ pub fn create_dictionary() {
             sizes.len() as c_uint,
             &mut parameters,
         );
-
+        println!("Selected parameters: {:?}", parameters);
         if ZDICT_isError(size) != 0 {
             panic!("Failed to train dictionary");
         }
@@ -107,6 +106,7 @@ pub fn tokenize_files() -> (Vec<Token>, Vec<usize>) {
         .par_bridge()
         .map(|x| x.expect("Failed to read line"))
         .map(|x| re.replace_all(&x, "").to_string())
+        //.map(|x| {println!("{:?}", x); x})
         .map(|x| tokenizer.encode_ordinary(&x) as Vec<Token>)
         .map(|x| {
             let len = x.len();
@@ -141,11 +141,11 @@ const INFERENCE_COMPRESSION_LEVEL : i32 = 1;
 
 impl<'a> CLM<'a> {
     pub fn new() -> Self {
-
         let dict = EncoderDictionary::copy(CLM::read_dict().as_slice(), INFERENCE_COMPRESSION_LEVEL);
         let tokenizer = p50k_base().unwrap();
         Self { dict, tokenizer }
     }
+
     pub fn read_dict() -> Vec<u8> {
         // read dictionary from file
         let mut file = File::open("model.zstd_dict").unwrap();
@@ -161,7 +161,6 @@ impl<'a> CLM<'a> {
         // memory writer
         let mut writer = zstd::stream::write::Encoder::with_prepared_dictionary(Vec::new(), &self.dict).unwrap();
 
-
         // write dictionary to memory writer
         writer.write_all(&raw_data).unwrap();
 
@@ -169,9 +168,9 @@ impl<'a> CLM<'a> {
         compressed
     }
 
-    pub fn predict_next(&self, prompt: String) -> String {
+    pub fn predict_next(&self, prompt: String, depth: usize, width: usize) -> String {
         let mut tokens = self.tokenizer.encode_ordinary(&prompt);
-        let next_token = self.predict_token(tokens.clone());
+        let (next_token, _size) = self.predict_tokens(tokens.clone(), depth, width);
         tokens.push(next_token);
         self.tokenizer.decode(tokens).unwrap_or(prompt)
     }
@@ -183,11 +182,11 @@ impl<'a> CLM<'a> {
         self.tokenizer.decode(tokens).unwrap_or(prompt)
     }
 
-    fn predict_token(&self, tokens: Vec<Token>) -> Token {
+    fn predict_tokens(&self, tokens: Vec<Token>, depth: usize, width: usize) -> (Token, usize) {
         let sizes = (1..MAX_TOKEN)
             .par_bridge()
             .map(|x| x as Token)
-            .filter(|token| !tokens.as_slice()[tokens.len()-5..].contains(token))
+            // .filter(|token| !tokens.as_slice()[tokens.len()-5..].contains(token))
             .map(|x| {
                 let mut prompt = tokens.clone();
                 prompt.push(x);
@@ -195,19 +194,26 @@ impl<'a> CLM<'a> {
             });
 
         let mut c: Vec<(Token, usize)> = sizes.collect();
+
         c.shuffle(&mut thread_rng());
 
-        println!("{:?}", c.iter().map(|x| x.1).counts());
+        c.sort_by(|a, b| a.1.cmp(&b.1));
 
-        c.iter()
-            .fold((0u16 as Token, usize::MAX), |(min_tok, min_size), (tok, size)| {
-                if *size <= min_size {
-                    (*tok, *size)
-                } else {
-                    (min_tok, min_size)
-                }
-            })
-            .0
+        println!("Predicting tokens: {:?}", c.clone().iter().map(|x|x.1).counts());
+
+        if depth == 0 {
+            return c[0];
+        }
+
+        let mut best = (0, std::usize::MAX);
+        for (token, _) in c.iter().take(width) {
+            let (_next_token, next_compression) = self.predict_tokens(tokens.clone(), depth - 1, width / 2);
+            if next_compression < best.1 {
+                best = (*token, next_compression);
+            }
+        }
+
+        best
     }
 
     fn compress_with_prompt(&self, prompt: &Vec<Token>, tokens: &Vec<Token>) -> usize {
@@ -253,7 +259,7 @@ pub mod tests {
 
     #[test]
     fn test_load_datasets() {
-        let (tokens, sizes) = tokenize_files();
+        let (tokens, _sizes) = tokenize_files();
         let max = tokens.iter().max().unwrap();
 
         println!("Dataset: {:?}, max: {:?}", tokens.len(), max);
@@ -266,33 +272,33 @@ pub mod tests {
 
     pub fn predict_loop() {
         // create text for a test prompt
-        let mut prompt = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy".to_string();
+        //let mut prompt = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy".to_string();
+
+        let mut prompt = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin tincidunt urna nisl, non molestie velit aliquam nec. In in erat id est porttitor efficitur ac eleifend ex. Nam auctor lacus urna, a sodales metus bibendum ut. Vestibulum vulputate facilisis ultrices. Vestibulum ut euismod erat. Maecenas pretium egestas nunc, non efficitur eros interdum eget. Suspendisse eleifend augue eu viverra rutrum. Phasellus non elementum erat, sit amet ultrices nunc. Sed facilisis at ipsum nec sagittis. Nulla non placerat purus. Pellentesque sed mollis enim. Praesent tincidunt purus id tellus tristique, ut ".to_string();
 
         let clm = CLM::new();
 
         println!("{}", prompt);
 
         for _ in 0..100 {
-            prompt = clm.predict_next(prompt.clone());
+            prompt = clm.predict_next(prompt.clone(), 0, 0);
             println!("{}", prompt)
         }
     }
 
     pub fn test_predict_token() {}
 
-    //#[test]
-    //fn compress_data() {
-    //    let (tokens, sizes) = tokenize_files();
-    //
-    //    let start = &tokens[1000..2000];
-    //    let dict = EncoderDictionary::copy(&read_dict(), 3);
-    //    let compressed = compress(start.to_vec(), &dict);
-    //
-    //    println!("Compressed size: {}", compressed.len());
-    //    println!("Decompressed size: {}", tokens_to_bytes(start.to_vec()).len());
-    //    println!("Compressed size without dict: {}", zstd::bulk::compress(&tokens_to_bytes(start.to_vec()), 3).unwrap().len());
-    //    let decompressed = decompress_to_tokens(&compressed);
-    //
-    //    assert_eq!(decompressed, start);
-    //}
+    #[test]
+    fn compress_data() {
+        let clm = CLM::new();
+        let start : Vec<Token> = clm.tokenizer.encode_ordinary("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin tincidunt urna nisl, non molestie velit aliquam nec. In in erat id est porttitor efficitur ac eleifend ex. Nam auctor lacus urna, a sodales metus bibendum ut. Vestibulum vulputate facilisis ultrices. Vestibulum ut euismod erat. Maecenas pretium egestas nunc, non efficitur eros interdum eget. Suspendisse eleifend augue eu viverra rutrum. Phasellus non elementum erat, sit amet ultrices nunc. Sed facilisis at ipsum nec sagittis. Nulla non placerat purus. Pellentesque sed mollis enim. Praesent tincidunt purus id tellus tristique, ut rhoncus justo fringilla. Suspendisse fermentum ultrices dolor, vel mollis enim. Aliquam eros.");
+        let compressed = clm.compress(start.clone());
+
+        println!("Compressed size: {}", compressed.len());
+        println!("Tokens size: {}", tokens_to_bytes(start.clone()).len());
+        println!("Compressed size without dict: {}", zstd::bulk::compress(&tokens_to_bytes(start.clone().to_vec()), 3).unwrap().len());
+        let decompressed = decompress_to_tokens(&compressed);
+
+        assert_eq!(decompressed, start);
+    }
 }

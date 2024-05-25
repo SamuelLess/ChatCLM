@@ -32,8 +32,8 @@ async fn main() {
 
 use compchat::backend::*;
 pub  fn main() {
-    //compchat::backend::create_dictionary();
-    compchat::backend::tests::predict_loop();
+    compchat::backend::create_dictionary();
+    //compchat::backend::tests::predict_loop();
 }
 
 /*#[cfg(not(feature = "ssr"))]
