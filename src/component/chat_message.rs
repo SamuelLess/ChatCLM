@@ -13,9 +13,7 @@ pub fn ChatMessage(msg: Message) -> impl IntoView {
                 </div>
             </Show>
 
-            <p class=("chat_message__bubble", move || is_user_msg)>
-                {msg.message}
-            </p>
+            <p class=("chat_message__bubble", move || is_user_msg)>{msg.message}</p>
         </div>
     }
 }

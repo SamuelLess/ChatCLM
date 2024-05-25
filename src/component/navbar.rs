@@ -30,6 +30,7 @@ pub fn NavBar() -> impl IntoView {
                     Model::ChatGPT3_5.name(),
                     Model::ChatGPT4o.name(),
                 ]
+
                 selected_option_index=selected_model_index
                 set_selected_option_index=set_selected_model_index
             />

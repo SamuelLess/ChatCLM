@@ -17,13 +17,11 @@ pub fn App() -> impl IntoView {
     // fill with dummy data
     set_chat.update(|chat| {
         chat.new_sever_message("Welcome to ChatCLM!".to_string());
-        chat.new_sever_message("Type a message and press Enter to chat.".to_string());
+        chat.new_sever_message("Another Server message.".to_string());
         chat.new_user_message("Type a message and press Enter to chat.".to_string());
     });
 
     view! {
-        // injects a stylesheet into the document <head>
-        // id=leptos means cargo-leptos will hot-reload this stylesheet
         <Stylesheet id="leptos" href="/pkg/chatclm.css"/>
 
         // sets the document title
@@ -33,14 +31,11 @@ pub fn App() -> impl IntoView {
         <Router fallback=|| {
             let mut outside_errors = Errors::default();
             outside_errors.insert_with_default_key(AppError::NotFound);
-            view! {
-                <ErrorTemplate outside_errors/>
-            }
-            .into_view()
+            view! { <ErrorTemplate outside_errors/> }.into_view()
         }>
             <main>
                 <Routes>
-                    <Route path="" view=move || view! {<HomePage chat=chat set_chat=set_chat/>}/>
+                    <Route path="" view=move || view! { <HomePage chat=chat set_chat=set_chat/> }/>
                 </Routes>
             </main>
         </Router>
