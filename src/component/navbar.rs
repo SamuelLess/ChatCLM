@@ -1,11 +1,11 @@
 use leptos::{component, IntoView, view};
-use crate::component::dropdown::Dropdown;
+// use crate::component::dropdown::Dropdown;
 
 #[component]
 pub fn NavBar() -> impl IntoView {
     view! {
         <nav class="navbar">
-            <Dropdown />
+            // <Dropdown />
         </nav>
     }
 }
