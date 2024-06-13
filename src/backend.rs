@@ -72,8 +72,9 @@ pub fn create_dictionary() {
         },
     };
 
+    let mut size = 0;
     unsafe {
-        let size = ZDICT_optimizeTrainFromBuffer_fastCover(
+        size = ZDICT_optimizeTrainFromBuffer_fastCover(
             buffer.as_mut_ptr() as *mut c_void,
             buffer_size,
             raw_data.as_ptr() as *mut c_void,
@@ -87,13 +88,20 @@ pub fn create_dictionary() {
         if ZDICT_isError(size) != 0 {
             panic!("Failed to train dictionary");
         }
-
-        buffer.resize(size, 0);
     }
 
+    println!("Dictionary trained, resizing buffer to size: {}", size);
+    buffer.resize(size, 0);
+    println!("Buffer resized {}", buffer.len());
+
+    println!("Writing dictionary to file");
     // write buffer to file
-    let mut file = File::create("model.zstd_dict").unwrap();
+    let mut file = File::create("./model.zstd_dict").unwrap();
     file.write_all(&buffer).unwrap();
+    file.flush();
+    file.sync_all();
+    drop(file);
+    println!("Dictionary written to file");
 }
 
 pub fn tokenize_files() -> (Vec<Token>, Vec<usize>) {
