@@ -3,7 +3,7 @@ use leptos::{server, ServerFnError};
 #[cfg(feature = "ssr")]
 use tokio::sync::OnceCell;
 #[cfg(feature = "ssr")]
-use crate::backend::CLM;
+use crate::backend::clm_model::ClmModel;
 
 #[derive(Copy, Clone)]
 pub enum Model {
@@ -54,8 +54,9 @@ pub async fn random_next_token(prompt: String) -> Option<String> {
         Some(format!("{} next", prompt))
     }
 }
+
 #[cfg(feature = "ssr")]
-static CLM: LazyLock<CLM> = LazyLock::new(CLM::new);
+static CLM: LazyLock<ClmModel> = LazyLock::new(|| ClmModel::from_checkpoint("clm_model.bin"));
 
 #[cfg(feature = "ssr")]
 pub async fn chat_clm_next_token(prompt: String ) -> Option<String> {
