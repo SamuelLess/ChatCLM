@@ -3,6 +3,7 @@ use std::io::{BufWriter, Write};
 use std::io::{BufRead, BufReader};
 
 use glob::glob;
+use rand::seq::SliceRandom;
 use rayon::iter::*;
 
 use regex::Regex;
@@ -17,6 +18,7 @@ use crate::backend::{DATA_PATH, Token};
 pub struct Dataset {
     data: Vec<Vec<Token>>,
 }
+
 
 
 impl Dataset {
@@ -43,7 +45,6 @@ impl Dataset {
         let tokens = files.iter()
             .flat_map(|filename| {
                 let file = File::open(filename).unwrap();
-                println!("Reading file: {:?}", filename);
                 BufReader::new(file).lines()
             })
             .par_bridge()
@@ -55,7 +56,11 @@ impl Dataset {
 
         pb.finish();
 
-        Dataset { data: tokens }
+        println!("Shuffling dataset");
+        let mut dataset = Dataset { data: tokens };
+        dataset.shuffle();
+        dataset
+
     }
 
     pub fn split_train_test(&self, train_size: f32) -> (Dataset, Dataset) {
@@ -78,6 +83,11 @@ impl Dataset {
         Dataset::deserialize(&mut deserializer).unwrap()
     }
 
+    pub fn shuffle(&mut self) {
+        let mut rng = rand::thread_rng();
+        self.data.shuffle(&mut rng);
+    }
+
     pub fn load_or_compute(filename: &str) -> Dataset {
         if std::path::Path::new(filename).exists() {
             Dataset::load_from_file(filename)
@@ -95,6 +105,26 @@ impl Dataset {
     pub fn from_data(data: Vec<Vec<Token>>) -> Dataset {
         Dataset { data }
     }
+
+    pub fn shrink_to_size(&self, tokens: usize) -> Dataset {
+        let mut total_tokens  = 0;
+        let mut new_dataset = Vec::new();
+
+        for line in self.data.iter() {
+            if total_tokens + line.len() <= tokens {
+                new_dataset.push(line.clone());
+                total_tokens += line.len();
+            } else if total_tokens > tokens {
+                continue;
+            } else if total_tokens + line.len() > tokens {
+                let partial_vec = line[0..(tokens-total_tokens)].to_vec();
+                total_tokens += partial_vec.len();
+                new_dataset.push(partial_vec);
+            }
+        }
+
+        Self::from_data(new_dataset)
+    }
 }
 
 mod tests {
@@ -109,7 +139,7 @@ mod tests {
     #[test]
     fn save_and_load_dataset() {
         let start_time = std::time::Instant::now();
-        let dataset = Dataset::compute_from_files(vec!["./data/english_10/eng_news_2023_10K-sentences.txt".to_string()]);
+        let dataset = Dataset::compute_from_files(vec!["./data/tests.txt".to_string()]);
         println!("Dataset computed in {:?}", start_time.elapsed());
         dataset.save_to_file("dataset.msgpack");
 
@@ -117,7 +147,7 @@ mod tests {
         let loaded_dataset = Dataset::load_from_file("dataset.msgpack");
         println!("Dataset loaded in {:?}", load_time.elapsed());
         println!("Computed file size: {:?}", std::fs::metadata("dataset.msgpack").unwrap().len());
-        println!("Original file size: {:?}", std::fs::metadata("./data/english_10/eng_news_2023_10K-sentences.txt").unwrap().len());
+        println!("Original file size: {:?}", std::fs::metadata("./data/tests.txt").unwrap().len());
 
         assert_eq!(dataset.data.len(), loaded_dataset.data.len());
 
@@ -133,10 +163,18 @@ mod tests {
 
     #[test]
     fn test_compute_from_files() {
-        let dataset = Dataset::compute_from_files(vec!["./data/english_10/eng_news_2023_10K-sentences.txt".to_string()]);
-        assert_eq!(dataset.data.len(), 10000);
+        let dataset = Dataset::compute_from_files(vec!["data/tests.txt".to_string()]);
+        assert_eq!(dataset.data.len(), 1000);
 
         // no sentence should be empty
         assert_eq!(dataset.data.iter().filter(|x| x.is_empty()).count(), 0);
     }
+
+    #[test]
+    fn shrink_dataset() {
+        let dataset = Dataset::compute_from_files(vec!["data/tests.txt".to_string()]);
+        let shrunk = dataset.shrink_to_size(1000);
+        assert_eq!(shrunk.data.iter().map(|x| x.len()).sum::<usize>(), 1000);
+    }
+
 }

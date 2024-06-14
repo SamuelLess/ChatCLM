@@ -13,7 +13,7 @@ pub fn train_model<'a>(input_tokens: &Vec<Vec<Token>>, training_options: Trainin
     
     let raw_data = input_tokens.iter().flat_map(|x| tokens_to_bytes(x)).collect_vec();
     let sizes = input_tokens.iter().map(|x| x.len() * BYTES_PER_TOKEN).collect_vec();
-    let buffer_size = raw_data.len();
+    let buffer_size = (raw_data.len() as f64 * training_options.dictionary_size_percentage) as usize;
     assert_eq!(sizes.iter().sum::<usize>(), raw_data.len(), "Sizes sum doesn't match raw data size");
     let mut buffer = vec![0u8; buffer_size];
     let mut parameters = training_options.to_zdict_params();
@@ -27,18 +27,11 @@ pub fn train_model<'a>(input_tokens: &Vec<Vec<Token>>, training_options: Trainin
             sizes.len() as c_uint,
             &mut parameters,
         );
-        println!("Selected parameters: {:?}", parameters);
-        println!("Dictionary size: {:?}", size);
 
         if ZDICT_isError(size) != 0 {
             panic!("Failed to train dictionary");
         }
     }
-
-    println!("Dictionary trained, resizing buffer to size: {}", size);
     buffer.resize(size, 0);
-    println!("Buffer resized {}", buffer.len());
-
-    
     ClmModel::from_buffer(buffer)
 }

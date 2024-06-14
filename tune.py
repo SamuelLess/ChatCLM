@@ -4,19 +4,56 @@ import json
 import subprocess
 
 import wandb
-import os
 
+sweep_config = {
+    "method": "bayes",
+    "metric": {
+        "goal": "maximize",
+        "name": "train_inf_gain"
+    },
+    "parameters": {
+        "datasetSize": {
+            "distribution": "int_uniform",
+            "max": 180_000_000,
+            "min": 1_000_000,
+        },
+        "dictionarySizePercentage" : {
+            "distribution": "uniform",
+            "max": 1,
+            "min": 0
+        },
+
+        "compressionLevel": {
+            "distribution": "int_uniform",
+            "max": 8,
+            "min": 1
+        },
+        "d": {
+            "values": [6, 8]
+        },
+        "f": {
+            "distribution": "int_uniform",
+            "max": 26,
+            "min": 5
+        },
+        "k": {
+            "distribution": "int_uniform",
+            "max": 2048,
+            "min": 16
+        },
+    }
+
+}
 
 def evaluate():
     run = wandb.init()
 
-    params = ["accel", "d", "f", "k", "shrinkDict", "shrinkDictMaxRegression", "splitPoint", "steps", "compressionLevel"]
-
-    # read all the arguments from wandb
-    arguments = {param: getattr(wandb.config, param) for param in params}
+    conf_dict = {}
+    for param in sweep_config["parameters"].keys():
+        conf_dict[param] = wandb.config[param]
 
     # Create a json object with the arguments
-    arguments = json.dumps(dict(arguments))
+    arguments = json.dumps(conf_dict)
     print("Starting with arguments:")
     print(arguments)
     # Start the binary, write the arguments to its stdin and read the output
@@ -41,107 +78,11 @@ def evaluate():
         wandb.log({})
 
 
-# create sweep method: bayes
-# metric:
-#   goal: minimize
-#   name: val_bpt
-# parameters:
-#   accel:
-#     distribution: int_uniform
-#     max: 10
-#     min: 1
-#   compressionLevel:
-#     distribution: int_uniform
-#     max: 18
-#     min: 1
-#   d:
-#     values:
-#       - 6
-#       - 8
-#   f:
-#     distribution: int_uniform
-#     max: 26
-#     min: 5
-#   k:
-#     distribution: int_uniform
-#     max: 2048
-#     min: 16
-#   shrinkDict:
-#     values:
-#       - 0
-#       - 1
-#   shrinkDictMaxRegression:
-#     distribution: int_uniform
-#     max: 50
-#     min: 0
-#   splitPoint:
-#     distribution: uniform
-#     max: 0.99
-#     min: 0.5
-#   steps:
-#     distribution: int_uniform
-#     max: 100
-#     min: 0
-sweep_config = {
-    "method": "bayes",
-    "metric": {
-        "goal": "minimize",
-        "name": "val_bpt"
-    },
-    "parameters": {
-        "dataset_size": {
-            "distribution": "int_uniform",
-            "max": 1000000,
-            "min": 100
-        },
-        "accel": {
-            "distribution": "int_uniform",
-            "max": 10,
-            "min": 1
-        },
-        "compressionLevel": {
-            "distribution": "int_uniform",
-            "max": 18,
-            "min": 1
-        },
-        "d": {
-            "values": [6, 8]
-        },
-        "f": {
-            "distribution": "int_uniform",
-            "max": 26,
-            "min": 5
-        },
-        "k": {
-            "distribution": "int_uniform",
-            "max": 2048,
-            "min": 16
-        },
-        "shrinkDict": {
-            "values": [0, 1]
-        },
-        "shrinkDictMaxRegression": {
-            "distribution": "int_uniform",
-            "max": 50,
-            "min": 0
-        },
-        "splitPoint": {
-            "distribution": "uniform",
-            "max": 0.99,
-            "min": 0.5
-        },
-        "steps": {
-            "distribution": "int_uniform",
-            "max": 100,
-            "min": 0
-        }
-    }
 
-}
 
 # Initialize a new sweep
 sweep_id = wandb.sweep(sweep_config)
-wandb.agent(sweep_id="nielsg/ChatCLM/lyzf1w0b", function=evaluate)
+wandb.agent(sweep_id=sweep_id, function=evaluate)
 
 
 

@@ -63,11 +63,6 @@ impl<'a> ClmModel<'a> {
                 (x, self.compress(&prompt).len())
             }).collect()
     }
-    pub(crate) fn next_token_distribution(&self, tokens: &Vec<Token>) -> HashMap<Token, f64> {
-        let c = self.get_next_token_sizes(tokens);
-        let sum = c.iter().map(|x| x.1).sum::<usize>() as f64;
-        c.iter().map(|(k, v)| (*k, *v as f64 / sum)).collect()
-    }
 
     fn predict_tokens(&self, tokens: &Vec<Token>, depth: usize, width: usize) -> (Token, usize) {
         let mut c = self.get_next_token_sizes(tokens);
@@ -126,5 +121,9 @@ impl<'a> ClmModel<'a> {
             correct += tokens.iter().zip(decompressed.iter()).filter(|(a, b)| a == b).count();
         }
         correct as f64 / total as f64
+    }
+    
+    pub fn get_dictionary_size(&self) -> usize {
+        self.model_buffer.len()
     }
 }

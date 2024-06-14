@@ -11,6 +11,7 @@ pub struct TrainingOptions {
     pub shrink_dict: u32,
     pub shrink_dict_max_regression: u32,
     pub compression_level: u32,
+    pub dictionary_size_percentage: f64 /* 0.0 to 1.0, how big the dictionary should be compared to the input data */,
 }
 
 impl TrainingOptions {
@@ -26,6 +27,7 @@ impl TrainingOptions {
             shrink_dict: 0,
             shrink_dict_max_regression: 0,
             compression_level: 3,
+            dictionary_size_percentage: 1.0,
         }
     }
 
