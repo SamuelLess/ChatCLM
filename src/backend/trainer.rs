@@ -5,7 +5,7 @@ use crate::backend::{BYTES_PER_TOKEN, Token, tokens_to_bytes};
 use crate::backend::clm_model::ClmModel;
 use crate::backend::training_options::TrainingOptions;
 
-pub fn train_model<'a>(input_tokens: Vec<Vec<Token>>, training_options: TrainingOptions) -> ClmModel<'a> {
+pub fn train_model<'a>(input_tokens: &Vec<Vec<Token>>, training_options: TrainingOptions) -> ClmModel<'a> {
     
     if input_tokens.is_empty() {
         return ClmModel::from_buffer(vec![]);

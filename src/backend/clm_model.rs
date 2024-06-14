@@ -1,9 +1,11 @@
+use std::collections::HashMap;
 use zstd::dict::{DecoderDictionary, EncoderDictionary};
 use tiktoken_rs::{CoreBPE, p50k_base};
 use std::fs::File;
 use rand::{thread_rng};
 use std::io::{Read, Write};
-use rayon::iter::{ParallelBridge, ParallelIterator};
+use std::ops::Range;
+use rayon::iter::{IterBridge, Map, ParallelBridge, ParallelIterator};
 use rand::prelude::SliceRandom;
 use itertools::Itertools;
 use crate::backend;
@@ -51,17 +53,24 @@ impl<'a> ClmModel<'a> {
         self.tokenizer.decode(tokens).unwrap_or(prompt + "<error>")
     }
 
-    fn predict_tokens(&self, tokens: &Vec<Token>, depth: usize, width: usize) -> (Token, usize) {
-        let sizes = (1..MAX_TOKEN)
+    fn get_next_token_sizes(&self, tokens: &Vec<Token>) -> Vec<(Token, usize)>{
+         (1..MAX_TOKEN)
             .par_bridge()
             .map(|x| x as Token)
             .map(|x| {
                 let mut prompt = tokens.clone();
                 prompt.push(x);
                 (x, self.compress(&prompt).len())
-            });
+            }).collect()
+    }
+    pub(crate) fn next_token_distribution(&self, tokens: &Vec<Token>) -> HashMap<Token, f64> {
+        let c = self.get_next_token_sizes(tokens);
+        let sum = c.iter().map(|x| x.1).sum::<usize>() as f64;
+        c.iter().map(|(k, v)| (*k, *v as f64 / sum)).collect()
+    }
 
-        let mut c: Vec<(Token, usize)> = sizes.collect();
+    fn predict_tokens(&self, tokens: &Vec<Token>, depth: usize, width: usize) -> (Token, usize) {
+        let mut c = self.get_next_token_sizes(tokens);
 
         c.shuffle(&mut thread_rng());
 
@@ -86,7 +95,7 @@ impl<'a> ClmModel<'a> {
         best
     }
 
-    fn compress_together(&self, prompt: &Vec<Token>, tokens: &Vec<Token>) -> usize {
+    pub(crate) fn compress_together(&self, prompt: &Vec<Token>, tokens: &Vec<Token>) -> usize {
         let mut prompt = prompt.clone();
         prompt.extend_from_slice(&tokens);
         self.compress(&prompt).len()
@@ -105,5 +114,17 @@ impl<'a> ClmModel<'a> {
         }
 
         tokens
+    }
+
+    pub fn evaluate(&self, test_data: &Vec<Vec<Token>>) -> f64 {
+        let mut total = 0;
+        let mut correct = 0;
+        for tokens in test_data {
+            let compressed = self.compress(tokens);
+            let decompressed = self.decompress_to_tokens(&compressed);
+            total += tokens.len();
+            correct += tokens.iter().zip(decompressed.iter()).filter(|(a, b)| a == b).count();
+        }
+        correct as f64 / total as f64
     }
 }

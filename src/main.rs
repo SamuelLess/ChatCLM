@@ -1,6 +1,5 @@
 use chatclm::app::App;
-#[cfg(feature = "ssr")]
-use chatclm::backend::create_dictionary;
+
 #[cfg(feature = "ssr")]
 use chatclm::fileserv::file_and_error_handler;
 
@@ -37,7 +36,6 @@ async fn leptos_main() {
 #[cfg(feature = "ssr")]
 fn main() {
     leptos_main();
-    //create_dictionary();
 }
 
 #[cfg(not(feature = "ssr"))]

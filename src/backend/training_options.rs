@@ -1,16 +1,16 @@
 use std::ffi::c_int;
 
 pub struct TrainingOptions {
-    d: u32,
-    f: u32,
-    k: u32,
-    steps: u32,
-    nb_threads: u32,
-    split_point: f64,
-    accel: u32,
-    shrink_dict: u32,
-    shrink_dict_max_regression: u32,
-    compression_level: u32,
+    pub d: u32,
+    pub f: u32,
+    pub k: u32,
+    pub steps: u32,
+    pub nb_threads: u32,
+    pub split_point: f64,
+    pub accel: u32,
+    pub shrink_dict: u32,
+    pub shrink_dict_max_regression: u32,
+    pub compression_level: u32,
 }
 
 impl TrainingOptions {
