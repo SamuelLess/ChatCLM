@@ -93,10 +93,10 @@ mod tests {
         let random_data = random_tokens(300);
         let training_data = Dataset::from_data((0..10).map(|_| random_data.clone()).collect());
 
-        let model = train_model(&Vec::new(), TrainingOptions::new());
+        let model = train_model(&Vec::new(), &TrainingOptions::new());
         let (initial_avg,_) = model.average_bytes_per_token(&training_data);
 
-        let trained_model = train_model(&training_data.get_data(), TrainingOptions::new());
+        let trained_model = train_model(&training_data.get_data(), &TrainingOptions::new());
         let (trained_avg, _) = trained_model.average_bytes_per_token(&training_data);
 
         assert!(trained_avg < initial_avg);
@@ -110,7 +110,7 @@ mod tests {
         let random_data = random_tokens(300);
         let testing_data = Dataset::from_data((0..10).map(|_| random_data.clone()).collect());
 
-        let model = train_model(&Vec::new(), TrainingOptions::new());
+        let model = train_model(&Vec::new(), &TrainingOptions::new());
         let (initial_avg, initial_stderr) = model.average_information_gain(&testing_data);
 
         // 99%  confidence interval
@@ -125,13 +125,13 @@ mod tests {
     }
     #[test]
     fn average_information_gain_is_greater_than_one() {
-        let random_data = random_tokens(300);
-        let training_data = Dataset::from_data((0..10).map(|_| random_data.clone()).collect());
+        let random_data = random_tokens(100);
+        let training_data = Dataset::from_data((0..8).map(|_| random_data.clone()).collect());
 
-        let model = train_model(&Vec::new(), TrainingOptions::new());
+        let model = train_model(&Vec::new(), &TrainingOptions::new());
         let (initial_avg,_) = model.average_information_gain(&training_data);
 
-        let trained_model = train_model(&training_data.get_data(), TrainingOptions::new());
+        let trained_model = train_model(&training_data.get_data(), &TrainingOptions::new());
         let (trained_avg, trained_stderr) = trained_model.average_information_gain(&training_data);
 
         assert!(trained_avg > 1f64);

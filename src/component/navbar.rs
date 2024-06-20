@@ -1,5 +1,5 @@
 use crate::component::dropdown::Dropdown;
-use crate::model::Model;
+use crate::model::FrontendModel;
 use leptos::{component, create_signal, view, IntoView, ReadSignal, WriteSignal};
 
 #[component]
@@ -11,10 +11,10 @@ pub fn NavBar(
         <nav class="navbar">
             <Dropdown
                 options=[
-                    Model::ChatCLM1_0.name(),
-                    Model::ChatGPT3_5.name(),
-                    Model::ChatGPT4o.name(),
-                    Model::ChatRandom.name(),
+                    FrontendModel::ChatCLM1_0.name(),
+                    FrontendModel::ChatGPT3_5.name(),
+                    FrontendModel::ChatGPT4o.name(),
+                    FrontendModel::ChatRandom.name(),
                 ]
 
                 selected_option_index=selected_model_index

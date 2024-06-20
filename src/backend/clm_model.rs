@@ -1,39 +1,41 @@
-use std::collections::HashMap;
-use zstd::dict::{DecoderDictionary, EncoderDictionary};
-use tiktoken_rs::{CoreBPE, p50k_base};
-use std::fs::File;
-use rand::{thread_rng};
 use std::io::{Read, Write};
-use std::ops::Range;
-use rayon::iter::{IterBridge, Map, ParallelBridge, ParallelIterator};
-use rand::prelude::SliceRandom;
+
 use itertools::Itertools;
+use rand::prelude::SliceRandom;
+use rand::thread_rng;
+use rayon::iter::{ParallelBridge, ParallelIterator};
+use tiktoken_rs::{p50k_base};
+use zstd::dict::{DecoderDictionary, EncoderDictionary};
+use std::fs::File;
+
 use crate::backend;
 use crate::backend::{INFERENCE_COMPRESSION_LEVEL, MAX_TOKEN, Token};
+use crate::backend::tokenizer::ClmTokenizer;
 
 pub struct ClmModel<'a> {
     dict: EncoderDictionary<'a>,
     model_buffer: Vec<u8>,
-    pub(crate) tokenizer: CoreBPE,
+    pub(crate) tokenizer: ClmTokenizer
 }
+
+impl Clone for ClmModel<'_> {
+    fn clone(&self) -> Self {
+        let dict = EncoderDictionary::copy(&*self.model_buffer, INFERENCE_COMPRESSION_LEVEL);
+        let tokenizer = self.tokenizer.clone();
+        Self { dict, model_buffer: self.model_buffer.clone(), tokenizer }
+    }
+}
+
 
 impl<'a> ClmModel<'a> {
     pub fn from_buffer(model_buffer: Vec<u8>) -> Self {
         let dict = EncoderDictionary::copy(&*model_buffer, INFERENCE_COMPRESSION_LEVEL);
-        let tokenizer = p50k_base().unwrap();
+        let tokenizer = ClmTokenizer::new_custom();
         Self { dict, model_buffer, tokenizer }
     }
 
-    pub fn from_checkpoint(path: &str) -> Self {
-        let mut file = File::open(path).unwrap();
-        let mut buffer = Vec::new();
-        file.read_to_end(&mut buffer).unwrap();
-        ClmModel::from_buffer(buffer)
-    }
-    
-    pub fn save_checkpoint(&self, path: &str) {
-        let mut file = File::create(path).unwrap();
-        file.write_all(&self.model_buffer).unwrap();
+    pub fn to_buffer(&self) -> Vec<u8> {
+        self.model_buffer.clone()
     }
 
     pub fn compress(&self, tokens: &Vec<Token>) -> Vec<u8> {
@@ -47,14 +49,14 @@ impl<'a> ClmModel<'a> {
     }
 
     pub fn predict_next(&self, prompt: String, depth: usize, width: usize) -> String {
-        let mut tokens = self.tokenizer.encode_ordinary(&prompt);
+        let mut tokens = self.tokenizer.encode(&prompt);
         let (next_token, _size) = self.predict_tokens(&tokens, depth, width);
         tokens.push(next_token);
-        self.tokenizer.decode(tokens).unwrap_or(prompt + "<error>")
+        self.tokenizer.decode(tokens)
     }
 
-    fn get_next_token_sizes(&self, tokens: &Vec<Token>) -> Vec<(Token, usize)>{
-         (1..MAX_TOKEN)
+    fn get_next_token_sizes(&self, tokens: &Vec<Token>) -> Vec<(Token, usize)> {
+        (1..MAX_TOKEN)
             .par_bridge()
             .map(|x| x as Token)
             .map(|x| {
@@ -90,12 +92,6 @@ impl<'a> ClmModel<'a> {
         best
     }
 
-    pub(crate) fn compress_together(&self, prompt: &Vec<Token>, tokens: &Vec<Token>) -> usize {
-        let mut prompt = prompt.clone();
-        prompt.extend_from_slice(&tokens);
-        self.compress(&prompt).len()
-    }
-
     pub fn decompress_to_tokens(&self, compressed: &[u8]) -> Vec<Token> {
         let dict = DecoderDictionary::copy(self.model_buffer.as_slice());
         let mut reader = zstd::stream::read::Decoder::with_prepared_dictionary(compressed, &dict).unwrap();
@@ -122,8 +118,29 @@ impl<'a> ClmModel<'a> {
         }
         correct as f64 / total as f64
     }
-    
+
     pub fn get_dictionary_size(&self) -> usize {
         self.model_buffer.len()
+    }
+
+    pub(crate) fn save_checkpoint(&self, path: &str) {
+        // write the buffer as Vec<u8> to a flat file
+        let mut file = File::create(path).unwrap();
+        file.write_all(&self.model_buffer).unwrap();
+        file.flush().unwrap();
+    }
+
+    pub(crate) fn from_checkpoint(path: &str) -> ClmModel<'a> {
+        // read the buffer from a flat file and return a new ClmModel
+        let mut file = File::open(path).unwrap();
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer).unwrap();
+        ClmModel::from_buffer(buffer)
+    }
+
+    pub(crate) fn compress_together(&self, prompt: &Vec<Token>, next: &Vec<Token>) -> usize {
+        let mut prompt = prompt.clone();
+        prompt.extend(next);
+        self.compress(&prompt).len()
     }
 }

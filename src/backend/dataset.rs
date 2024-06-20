@@ -3,18 +3,19 @@ use std::io::{BufWriter, Write};
 use std::io::{BufRead, BufReader};
 
 use glob::glob;
+use itertools::Itertools;
 use rand::seq::SliceRandom;
 use rayon::iter::*;
 
 use regex::Regex;
-use tiktoken_rs::p50k_base;
+use tiktoken_rs::{CoreBPE, p50k_base};
 
 use serde::{Deserialize, Serialize};
 use rmp_serde::{Deserializer, Serializer};
 
 use crate::backend::{DATA_PATH, Token};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Dataset {
     data: Vec<Vec<Token>>,
 }
@@ -31,7 +32,7 @@ impl Dataset {
     }
 
     fn compute_from_files(files: Vec<String>) -> Dataset {
-        let tokenizer = p50k_base().unwrap();
+        let tokenizer = Self::get_tokenizer();
         let re = Regex::new(r"^\d+\s").unwrap();
 
         let pb = indicatif::ProgressBar::new(0);
@@ -102,6 +103,10 @@ impl Dataset {
         &self.data
     }
 
+    pub fn get_data_out(self) -> Vec<Vec<Token>> {
+        self.data
+    }
+
     pub fn from_data(data: Vec<Vec<Token>>) -> Dataset {
         Dataset { data }
     }
@@ -125,9 +130,64 @@ impl Dataset {
 
         Self::from_data(new_dataset)
     }
+
+    // Join adjacent lines until they reach a certain size
+    pub fn join_lines(self, chunk_size: usize) -> Dataset {
+        let new_data = self.data.into_iter().fold(Vec::new(), |mut acc, line| {
+            if acc.is_empty() {
+                acc.push(line);
+            } else if acc.last().unwrap().len() < chunk_size {
+                acc.last_mut().unwrap().extend(line);
+            } else {
+                acc.push(line);
+            }
+            acc
+        });
+        
+        Self::from_data(new_data)
+    }
+
+    pub fn split_into_chunks(&self, chunk_count: usize) -> impl Iterator<Item=Dataset>  + '_{
+
+        if self.data.is_empty() {
+           panic!("Cannot split empty dataset into chunks");
+        }
+
+        let chunk_size = (self.data.len() as f64 / chunk_count as f64).ceil() as usize;
+        // split into n chunks, each containing chunk_size sentences
+        self.data.chunks(chunk_size).map(|x| Dataset::from_data(x.to_vec()))
+    }
+    pub fn empty() -> Dataset {
+        Dataset { data: Vec::new() }
+    }
+
+    fn get_tokenizer() -> CoreBPE {
+        p50k_base().unwrap()
+    }
+    pub fn tokenize(text: &str) -> Vec<Token> {
+        Self::get_tokenizer().encode_ordinary(text) as Vec<Token>
+    }
+    
+    pub fn detokenize(tokens: Vec<Token>) -> String {
+        Self::get_tokenizer().decode(tokens).unwrap_or("<error>".to_string())
+    }
+
+    #[cfg(test)]
+    pub fn test_dataset() -> Dataset {
+        let mut data = Vec::new();
+        for _ in 0..20 {
+            let mut sentence = Vec::new();
+            for _ in 0..100 {
+                sentence.push(rand::random());
+            }
+            data.push(sentence);
+        }
+        Dataset { data }
+    }
 }
 
 mod tests {
+    use itertools::Itertools;
     use crate::backend::dataset::Dataset;
 
     #[test]
@@ -177,4 +237,22 @@ mod tests {
         assert_eq!(shrunk.data.iter().map(|x| x.len()).sum::<usize>(), 1000);
     }
 
+
+    #[test]
+    fn split_into_chunks() {
+        let dataset = Dataset::compute_from_files(vec!["data/tests.txt".to_string()]);
+        let chunks = dataset.split_into_chunks(10).collect_vec();
+        assert_eq!(chunks.len(), 10);
+        assert_eq!(chunks.iter().map(|x| x.data.len()).sum::<usize>(), dataset.data.len());
+    }
+    
+    #[test]
+    fn join_lines() {
+        let dataset = Dataset::compute_from_files(vec!["data/tests.txt".to_string()]);
+        let joined = dataset.join_lines(100);
+        // the last line can be shorter than 100, it doesn't matter
+        let min_len = joined.data.iter().rev().skip(1).map(|x| x.len()).min().unwrap();
+        println!("Min len: {}", min_len);
+        assert!(min_len >= 100);
+    }
 }

@@ -4,31 +4,30 @@ use leptos::{server, ServerFnError};
 use tokio::sync::OnceCell;
 #[cfg(feature = "ssr")]
 use crate::backend::clm_model::ClmModel;
-
 #[derive(Copy, Clone)]
-pub enum Model {
+pub enum FrontendModel {
     ChatCLM1_0,
     ChatGPT3_5,
     ChatGPT4o,
     ChatRandom,
 }
 
-impl Model {
+impl FrontendModel {
     pub fn name(&self) -> &'static str {
         match self {
-            Model::ChatCLM1_0 => "ChatCLM 0.1-pre-alpha",
-            Model::ChatGPT3_5 => "ChatGPT 3.5",
-            Model::ChatGPT4o => "ChatGPT 4o",
-            Model::ChatRandom => "ChatRandom",
+            FrontendModel::ChatCLM1_0 => "ChatCLM 0.1-pre-alpha",
+            FrontendModel::ChatGPT3_5 => "ChatGPT 3.5",
+            FrontendModel::ChatGPT4o => "ChatGPT 4o",
+            FrontendModel::ChatRandom => "ChatRandom",
         }
     }
 
     pub fn from_index(index: usize) -> Self {
         match index {
-            0 => Model::ChatCLM1_0,
-            1 => Model::ChatGPT3_5,
-            2 => Model::ChatGPT4o,
-            3 => Model::ChatRandom,
+            0 => FrontendModel::ChatCLM1_0,
+            1 => FrontendModel::ChatGPT3_5,
+            2 => FrontendModel::ChatGPT4o,
+            3 => FrontendModel::ChatRandom,
             _ => panic!("Invalid model index"),
         }
     }
@@ -37,9 +36,9 @@ impl Model {
     #[cfg(feature = "ssr")]
     pub async fn predict_next_token(model_idx: usize, prompt: String) -> Option<String> {
         match Self::from_index(model_idx) {
-            Model::ChatCLM1_0 => chat_clm_next_token(prompt).await,
-            Model::ChatGPT4o => gpt4o_next_token(prompt).await,
-            Model::ChatRandom => random_next_token(prompt).await,
+            FrontendModel::ChatCLM1_0 => chat_clm_next_token(prompt).await,
+            FrontendModel::ChatGPT4o => gpt4o_next_token(prompt).await,
+            FrontendModel::ChatRandom => random_next_token(prompt).await,
             _ => random_next_token(prompt).await,
         }
     }
@@ -90,7 +89,7 @@ pub async fn get_next_token(
     model_idx: usize,
     prompt: String,
 ) -> Result<Option<String>, ServerFnError> {
-    Ok(Model::predict_next_token(model_idx, prompt).await)
+    Ok(FrontendModel::predict_next_token(model_idx, prompt).await)
 }
 
 pub fn cut_prompt(prompt: &String, response: &String) -> String {
