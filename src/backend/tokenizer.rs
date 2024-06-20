@@ -1,12 +1,6 @@
 use itertools::Itertools;
 use tiktoken_rs::{CoreBPE, p50k_base};
-use tokenizers::models::bpe::{BPE, BpeTrainerBuilder};
-use tokenizers::models::TrainerWrapper::BpeTrainer;
 use tokenizers::tokenizer::Tokenizer;
-use tokenizers::{DecoderWrapper, Model, NormalizerWrapper, PostProcessorWrapper, PreTokenizerWrapper, TokenizerBuilder, TokenizerImpl};
-use tokenizers::pre_tokenizers::byte_level::ByteLevel;
-use tokenizers::pre_tokenizers::whitespace::Whitespace;
-use crate::backend::dataset::Dataset;
 use crate::backend::Token;
 
 static TOKENIZER_PATH: &str = "tokenizer.json";
@@ -19,6 +13,7 @@ pub enum ClmTokenizer {
 
 impl ClmTokenizer {
 
+    #[allow(dead_code)]
     fn new_gpt2() -> Self {
         let tokenizer = p50k_base().unwrap();
         ClmTokenizer::GPT2(tokenizer)
@@ -50,6 +45,7 @@ impl ClmTokenizer {
     }
 
 }
+#[cfg(test)]
 mod tests {
     use crate::backend::tokenizer::{ClmTokenizer};
 

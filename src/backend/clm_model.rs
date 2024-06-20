@@ -4,7 +4,6 @@ use itertools::Itertools;
 use rand::prelude::SliceRandom;
 use rand::thread_rng;
 use rayon::iter::{ParallelBridge, ParallelIterator};
-use tiktoken_rs::{p50k_base};
 use zstd::dict::{DecoderDictionary, EncoderDictionary};
 use std::fs::File;
 
@@ -123,6 +122,7 @@ impl<'a> ClmModel<'a> {
         self.model_buffer.len()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn save_checkpoint(&self, path: &str) {
         // write the buffer as Vec<u8> to a flat file
         let mut file = File::create(path).unwrap();

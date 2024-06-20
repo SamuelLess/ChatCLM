@@ -17,7 +17,7 @@ pub fn train_model<'a>(input_tokens: &Vec<Vec<Token>>, training_options: &Traini
     assert_eq!(sizes.iter().sum::<usize>(), raw_data.len(), "Sizes sum doesn't match raw data size");
     let mut buffer = vec![0u8; buffer_size];
     let mut parameters = training_options.to_zdict_params();
-    let mut size = 0;
+    let size;
     unsafe {
         size = ZDICT_optimizeTrainFromBuffer_fastCover(
             buffer.as_mut_ptr() as *mut c_void,

@@ -6,22 +6,6 @@ pub mod evaluation;
 pub mod ensemble_model;
 mod tokenizer;
 
-use std::fmt::Display;
-use std::fs::File;
-use std::io::{BufRead, BufReader, Read, Write};
-use std::string::String;
-
-use glob::glob;
-use itertools::Itertools;
-use rand::Rng;
-use rand::seq::SliceRandom;
-use rayon::iter::*;
-use regex::Regex;
-use tiktoken_rs::p50k_base;
-use zstd;
-use zstd::dict::DecoderDictionary;
-use zstd_sys;
-use clm_model::ClmModel;
 
 // https://wortschatz.uni-leipzig.de/en/download/English
 const DATA_PATH: &str = "./data";
@@ -38,9 +22,13 @@ pub fn tokens_to_bytes(tokens: &Vec<Token>) -> Vec<u8> {
 
 const INFERENCE_COMPRESSION_LEVEL: i32 = 1;
 
+#[cfg(test)]
 pub mod tests {
+    use itertools::Itertools;
     use rand::distributions::Uniform;
+    use rand::Rng;
     use crate::backend::*;
+    use crate::backend::clm_model::ClmModel;
     use crate::backend::dataset::Dataset;
     use crate::backend::trainer::train_model;
     use crate::backend::training_options::TrainingOptions;

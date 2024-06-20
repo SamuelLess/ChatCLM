@@ -1,6 +1,6 @@
 use crate::component::dropdown::Dropdown;
 use crate::model::FrontendModel;
-use leptos::{component, create_signal, view, IntoView, ReadSignal, WriteSignal};
+use leptos::{component, view, IntoView, ReadSignal, WriteSignal};
 
 #[component]
 pub fn NavBar(

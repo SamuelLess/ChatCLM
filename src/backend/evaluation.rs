@@ -1,7 +1,6 @@
 use num::Num;
 use num::pow::Pow;
 use rand::Rng;
-use rand::seq::SliceRandom;
 
 use crate::backend::clm_model::ClmModel;
 use crate::backend::dataset::Dataset;
@@ -81,7 +80,7 @@ impl<'a> ClmModel<'a> {
     }
 }
 
-
+#[cfg(test)]
 mod tests {
     use crate::backend::dataset::Dataset;
     use crate::backend::tests::random_tokens;

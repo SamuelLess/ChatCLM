@@ -1,7 +1,5 @@
-use std::sync::{Arc, LazyLock, Once};
+use std::sync::LazyLock;
 use leptos::{server, ServerFnError};
-#[cfg(feature = "ssr")]
-use tokio::sync::OnceCell;
 #[cfg(feature = "ssr")]
 use crate::backend::clm_model::ClmModel;
 #[derive(Copy, Clone)]
@@ -68,7 +66,7 @@ pub async fn chat_clm_next_token(prompt: String ) -> Option<String> {
 
 }
 
-pub async fn gpt4o_next_token(prompt: String) -> Option<String> {
+pub async fn gpt4o_next_token(_prompt: String) -> Option<String> {
     /*let client = Client::new();
 
     let request = CreateCompletionRequestArgs::default()

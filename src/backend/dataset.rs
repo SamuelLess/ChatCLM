@@ -1,9 +1,8 @@
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::BufWriter;
 use std::io::{BufRead, BufReader};
 
 use glob::glob;
-use itertools::Itertools;
 use rand::seq::SliceRandom;
 use rayon::iter::*;
 
@@ -186,6 +185,7 @@ impl Dataset {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use itertools::Itertools;
     use crate::backend::dataset::Dataset;

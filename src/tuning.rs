@@ -1,17 +1,10 @@
-use std::io;
-use std::io::Write;
 use indicatif::ProgressIterator;
-use num::pow;
-use num::pow::Pow;
 use rand::seq::SliceRandom;
-use rayon::prelude::IntoParallelIterator;
 use rayon::prelude::*;
 use serde::{Serialize, Deserialize};
 
 use chatclm::backend::dataset::Dataset;
 use chatclm::backend::Token;
-use chatclm::backend::trainer::train_model;
-use chatclm::backend::training_options::TrainingOptions;
 use chatclm::backend::ensemble_model::EnsembleModel;
 use chatclm::backend::MAX_TOKEN;
 
@@ -124,7 +117,7 @@ fn main() {
     let mut prompt_tokens = Dataset::tokenize(prompt);
     let mut size_before = trained_model.compressed_size(&prompt_tokens);
 
-    for i in 0..50 {
+    for _ in 0..50 {
         println!("Prompt: {} ", Dataset::detokenize(prompt_tokens.clone()).as_str());
 
         let mut sizes : Vec<(Token, f64)> = (0..MAX_TOKEN).progress().par_bridge().map(|next_token| {

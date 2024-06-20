@@ -1,11 +1,6 @@
-use std::io::Write;
 
-use indicatif::ProgressIterator;
-use itertools::Itertools;
-use rayon::iter::IntoParallelRefIterator;
 use rayon::prelude::*;
 use rusqlite::Connection;
-use serde::{Deserialize, Serialize};
 
 use crate::backend::clm_model::ClmModel;
 use crate::backend::dataset::Dataset;
@@ -46,7 +41,7 @@ impl EnsembleModel<'_> {
 
     pub fn save_checkpoint(&self, path: &str) {
         // write all models to a sqlite database
-        let mut conn = Connection::open(path).unwrap();
+        let conn = Connection::open(path).unwrap();
         conn.execute("CREATE TABLE models (id INTEGER PRIMARY KEY, model BLOB)", []).unwrap();
 
         for (i, model) in self.models.iter().enumerate() {
@@ -61,7 +56,7 @@ impl EnsembleModel<'_> {
     pub fn from_checkpoint(path: &str) -> Self {
         // read all models from a sqlite database
         let  conn = Connection::open(path).unwrap();
-        let mut models = Vec::new();
+        let models;
         {
             let mut stmt = conn.prepare("SELECT model FROM models").unwrap();
             models = stmt.query_map([], |row| {
@@ -82,7 +77,7 @@ impl EnsembleModel<'_> {
     }
 }
 
-
+#[cfg(test)]
 mod tests {
     use crate::backend::dataset::Dataset;
     use crate::backend::ensemble_model::EnsembleModel;
