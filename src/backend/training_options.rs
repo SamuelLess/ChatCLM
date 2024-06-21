@@ -46,7 +46,7 @@ impl TrainingOptions {
             shrinkDictMaxRegression: self.shrink_dict_max_regression,
             zParams: zstd_sys::ZDICT_params_t {
                 compressionLevel: self.compression_level as c_int,
-                notificationLevel: 4,
+                notificationLevel: 2,
                 dictID: 0,
             },
         }

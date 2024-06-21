@@ -40,6 +40,13 @@ impl EnsembleModel<'_> {
     }
 
     pub fn save_checkpoint(&self, path: &str) {
+        // delete the file if it already exists
+
+        if std::path::Path::new(path).exists() {
+            println!("Model checkpoint already exists, deleting it");
+            std::fs::remove_file(path).unwrap();
+        }
+
         // write all models to a sqlite database
         let conn = Connection::open(path).unwrap();
         conn.execute("CREATE TABLE models (id INTEGER PRIMARY KEY, model BLOB)", []).unwrap();

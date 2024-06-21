@@ -10,9 +10,9 @@ mod tokenizer;
 // https://wortschatz.uni-leipzig.de/en/download/English
 const DATA_PATH: &str = "./data";
 
-pub type Token = usize;
+pub type Token = u8;
 const BYTES_PER_TOKEN: usize = std::mem::size_of::<Token>();
-pub const MAX_TOKEN: Token = 50280; // Please update if u use another tokenizer!!!!
+pub const MAX_TOKEN: Token = 254; // Please update if u use another tokenizer!!!!
 
 pub fn tokens_to_bytes(tokens: &Vec<Token>) -> Vec<u8> {
     tokens.iter().flat_map(|x| (*x).to_be_bytes()).collect()

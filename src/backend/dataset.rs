@@ -7,12 +7,12 @@ use rand::seq::SliceRandom;
 use rayon::iter::*;
 
 use regex::Regex;
-use tiktoken_rs::{CoreBPE, p50k_base};
 
 use serde::{Deserialize, Serialize};
 use rmp_serde::{Deserializer, Serializer};
 
 use crate::backend::{DATA_PATH, Token};
+use crate::backend::tokenizer::ClmTokenizer;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Dataset {
@@ -51,7 +51,7 @@ impl Dataset {
             .map(|x| x.expect("Failed to read line"))
             .map(|x| {pb.inc(x.len() as u64); x})
             .map(|x| re.replace_all(&x, "").to_string())
-            .map(|x| tokenizer.encode_ordinary(&x) as Vec<Token>)
+            .map(|x| tokenizer.encode(&x))
             .collect();
 
         pb.finish();
@@ -160,15 +160,15 @@ impl Dataset {
         Dataset { data: Vec::new() }
     }
 
-    fn get_tokenizer() -> CoreBPE {
-        p50k_base().unwrap()
+    pub fn get_tokenizer() -> ClmTokenizer {
+        ClmTokenizer::new_custom()
     }
     pub fn tokenize(text: &str) -> Vec<Token> {
-        Self::get_tokenizer().encode_ordinary(text) as Vec<Token>
+        Self::get_tokenizer().encode(text)
     }
     
     pub fn detokenize(tokens: Vec<Token>) -> String {
-        Self::get_tokenizer().decode(tokens).unwrap_or("<error>".to_string())
+        Self::get_tokenizer().decode(tokens)
     }
 
     #[cfg(test)]

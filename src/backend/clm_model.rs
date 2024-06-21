@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::io::{Read, Write};
 
 use itertools::Itertools;
@@ -5,7 +6,6 @@ use rand::prelude::SliceRandom;
 use rand::thread_rng;
 use rayon::iter::{ParallelBridge, ParallelIterator};
 use zstd::dict::{DecoderDictionary, EncoderDictionary};
-use std::fs::File;
 
 use crate::backend;
 use crate::backend::{INFERENCE_COMPRESSION_LEVEL, MAX_TOKEN, Token};
@@ -14,7 +14,7 @@ use crate::backend::tokenizer::ClmTokenizer;
 pub struct ClmModel<'a> {
     dict: EncoderDictionary<'a>,
     model_buffer: Vec<u8>,
-    pub(crate) tokenizer: ClmTokenizer
+    pub(crate) tokenizer: ClmTokenizer,
 }
 
 impl Clone for ClmModel<'_> {
@@ -100,7 +100,12 @@ impl<'a> ClmModel<'a> {
 
         let mut tokens = Vec::new();
         for i in decompressed.chunks(backend::BYTES_PER_TOKEN) {
-            tokens.push(Token::from_be_bytes([i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7]]));
+            if backend::BYTES_PER_TOKEN == 1 {
+                tokens.push(Token::from_be_bytes([i[0]]));
+            } else if backend::BYTES_PER_TOKEN == 8 {
+                todo!("Implement 8 byte tokens")
+                //tokens.push(Token::from_be_bytes([i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7]]));
+            }
         }
 
         tokens
