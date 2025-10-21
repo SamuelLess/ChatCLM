@@ -14,3 +14,4 @@ playwright/.cache/
 
 wandb/
 *.checkpoint
+mkcert_development_CA_*.crt

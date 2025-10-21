@@ -133,9 +133,5 @@ lib-default-features = false
 # Optional. Defaults to "release".
 lib-profile-release = "wasm-release"
 
-[[workspace.metadata.leptos]]
-# project name
-name = "chatclm"
+# The binary target to use when multiple bin targets are defined
 bin-target = "chatclm"
-#lib-package = "front"
-
