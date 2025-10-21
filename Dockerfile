@@ -4,14 +4,18 @@ FROM rustlang/rust:nightly-bookworm as builder
 # If you’re using stable, use this instead
 # FROM rust:1.74-bullseye as builder
 
-# Install cargo-binstall, which makes it easier to install other
-# cargo extensions like cargo-leptos
-RUN wget https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
-RUN tar -xvf cargo-binstall-x86_64-unknown-linux-musl.tgz
-RUN cp cargo-binstall /usr/local/cargo/bin
+# Install CA certificates for SSL verification and build dependencies including WASM support
+RUN apt-get update && apt-get install -y ca-certificates build-essential clang wasi-libc && rm -rf /var/lib/apt/lists/*
 
-# Install cargo-leptos
-RUN cargo binstall cargo-leptos@0.2.17 -y
+# Copy and trust the mkcert development CA for the proxy
+COPY mkcert_development_CA_*.crt /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+
+# Set environment variables for WASM compilation
+ENV CFLAGS_wasm32_unknown_unknown="--sysroot=/usr/share/wasi-sysroot"
+
+# Install cargo-leptos using cargo install
+RUN cargo install cargo-leptos@0.2.17 --locked
 
 # Add the WASM target
 RUN rustup target add wasm32-unknown-unknown
